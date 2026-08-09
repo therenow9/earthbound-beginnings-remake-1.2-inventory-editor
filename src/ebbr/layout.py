@@ -86,10 +86,24 @@ EQUIPMENT_SIZE = 4
 EQUIP_SLOTS = ("weapon", "pendant", "band", "coin")
 
 CHAR_ID = 0x36
-HP_CUR = 0x46           # u16 LE
-HP_MAX = 0x48
-PP_CUR = 0x4C
-PP_MAX = 0x4E
+
+#: Current HP/PP, u16 LE. VERIFIED in-game: writing 777 here made the Status
+#: screen read "Hit Points: 777 / 542".
+HP_CUR = 0x48
+PP_CUR = 0x4E
+
+#: A second copy of HP/PP that equals the current value in every real save.
+#: NOT the maxima, despite the pairing looking like it: setting these to 111
+#: left the Status screen still reporting a 542 maximum. Purpose unknown.
+#: Written in step with the current values so we never produce a pairing the
+#: game itself does not.
+HP_ALT = 0x46
+PP_ALT = 0x4C
+
+#: Maximum HP/PP are not in the character record anywhere we have found. The
+#: Status screen keeps showing the original maximum after every byte of the
+#: record we know about has been overwritten, so they are most likely derived
+#: from level and stats rather than stored.
 RECORD_TERMINATOR = 0x5D  # FF FF
 
 #: Character ids as they index the name table.

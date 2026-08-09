@@ -19,11 +19,9 @@ downstream.)
 warps — those need open-ended reverse engineering for little benefit. Items are
 the useful part and the part that is already understood.
 
-**CLI only for now — a GUI is the next task.** See
-[docs/PLAN.md](docs/PLAN.md) Phase 5.
-
 Working: container handling (block detection, checksum validation and repair,
-mirror-copy consistency), character records, inventories, equipment, and a CLI.
+mirror-copy consistency), character records, inventories, equipment, HP, PP and
+money — through a GUI or a CLI.
 
 The item table is complete: all 253 named ids, read straight out of the ROM by
 [tools/extract_items.py](tools/extract_items.py). You supply your own ROM; the
@@ -38,6 +36,11 @@ check on demand.
 
 ## Install
 
+**Just want to edit a save?** Download `EBBR-Save-Editor.exe` from the
+[latest release](../../releases/latest) and run it. Nothing to install.
+
+From source:
+
 ```bash
 git clone <your-repo-url>
 cd ebbr-save-editor
@@ -45,6 +48,23 @@ pip install -e ".[dev]"
 ```
 
 Python 3.10+. No required runtime dependencies.
+
+## The GUI
+
+```bash
+ebbr-gui              # or: ebbr-gui save.srm
+```
+
+Pick a save slot, pick a character, edit their bag. `Add…` opens a
+search-as-you-type item picker; `Remove` and the arrows reorder. Equipment is a
+dropdown per slot, listing only what that character is actually carrying. HP,
+PP and money are editable in place. A `.bak` is written on every save.
+
+To build the standalone executable:
+
+```bash
+python packaging/build_exe.py     # -> dist/EBBR-Save-Editor.exe
+```
 
 ## Use
 

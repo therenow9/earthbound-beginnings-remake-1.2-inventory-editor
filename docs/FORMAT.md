@@ -113,16 +113,36 @@ independently from saves.
 | `0x24` | inventory, 14 bytes, one item id per slot, `00` empty | VERIFIED |
 | `0x32` | equip pointers, 4 bytes | VERIFIED |
 | `0x36` | character id | VERIFIED |
-| `0x46` | current HP, u16 LE | VERIFIED |
-| `0x48` | max HP, u16 LE | INFERRED |
-| `0x4C` | current PP, u16 LE | VERIFIED |
-| `0x4E` | max PP, u16 LE | INFERRED |
+| `0x46` | second copy of HP — **not** the maximum, purpose unknown | VERIFIED |
+| `0x48` | current HP, u16 LE | VERIFIED |
+| `0x4C` | second copy of PP — **not** the maximum, purpose unknown | VERIFIED |
+| `0x4E` | current PP, u16 LE | VERIFIED |
 | `0x5D` | `FF FF` record terminator | VERIFIED |
 
-`0x48` and `0x4E` stay INFERRED. In every real save examined so far the party
-is at full health, so current and max are equal and the pair is indistinguishable.
-Consistent with the guess, but no evidence for it. A save taken after damage and
-before healing would settle it in one look.
+**These four were previously labelled the wrong way round.** `0x46`/`0x4C`
+were read as the current values and `0x48`/`0x4E` guessed as the maxima. Every
+real save has the party at full health, so all four hold the same number and
+nothing distinguished them — the error was invisible and produced correct
+output by coincidence.
+
+Settled by writing values that differ and reading the game's own Status
+screen. With `0x46 = 111` and `0x48 = 777` it printed:
+
+    Hit Points:  777 / 542
+    Psychic Points:  777 / 155
+
+So `0x48` is *current* HP, and `0x4E` is current PP by the same test. The
+maxima shown (542, 155) are the character's original values, unchanged by
+writing any byte in this table — they are **not stored in the character
+record** and are most likely derived from level and stats.
+
+Note the trap this is an instance of: a field pair that is equal in every
+sample carries no information about which is which. Two saves agreeing is not
+cross-validation when both are full HP.
+
+The editor writes both copies whenever HP or PP changes. `0x46`/`0x4C` have no
+observed effect, but they match the current value in every genuine save, and
+leaving one stale would create a pairing the game never produces.
 
 Equip pointers are **1-based indices into that character's own inventory**;
 `00` means nothing equipped. Slot order is **weapon, pendant, band, coin**,

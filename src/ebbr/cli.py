@@ -42,7 +42,7 @@ def cmd_info(args) -> int:
         print(f"  party: {', '.join(blk.name(c) for c in blk.party)}")
         for cid in range(L.CHAR_COUNT):
             ch = blk.character(cid)
-            print(f"\n  {ch.name}  HP {ch.hp}/{ch.hp_max}  PP {ch.pp}/{ch.pp_max}")
+            print(f"\n  {ch.name}  HP {ch.hp}  PP {ch.pp}")
             for i, iid in enumerate(ch.inventory):
                 if iid:
                     print(f"     {i:2d}  0x{iid:02X}  {items.name(iid)}")
@@ -83,8 +83,8 @@ def _describe_offset(off: int) -> str:
             return f"{who} inventory[{rel - L.INVENTORY}]"
         if L.EQUIPMENT <= rel < L.EQUIPMENT + L.EQUIPMENT_SIZE:
             return f"{who} equip[{L.EQUIP_SLOTS[rel - L.EQUIPMENT]}]"
-        for fld, nm in ((L.HP_CUR, "hp"), (L.HP_MAX, "hp_max"),
-                        (L.PP_CUR, "pp"), (L.PP_MAX, "pp_max")):
+        for fld, nm in ((L.HP_CUR, "hp"), (L.HP_ALT, "hp (2nd copy)"),
+                        (L.PP_CUR, "pp"), (L.PP_ALT, "pp (2nd copy)")):
             if rel in (fld, fld + 1):
                 return f"{who} {nm}"
         return f"{who} record +0x{rel:02X}"
@@ -92,13 +92,10 @@ def _describe_offset(off: int) -> str:
 
 
 def _load_editable(path: Path) -> SaveFile:
-    """Load a save, refusing anything this tool must not write to."""
-    s = SaveFile.load(path)
-    if s.layout is not L.EBBR:
-        raise SystemExit(
-            f"refusing to edit: {path.name} is a {s.layout.name} save, not "
-            f"the remake. Writing remake geometry to it would corrupt it.")
-    return s
+    try:
+        return SaveFile.load_editable(path)
+    except SaveError as e:
+        raise SystemExit(f"refusing to edit: {e}")
 
 
 def _write(s: SaveFile, path: Path, args) -> None:

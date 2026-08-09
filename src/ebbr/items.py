@@ -26,14 +26,35 @@ at the right offset.
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
 
 VERIFIED = "verified"     # same id observed in >=2 independent saves
 INFERRED = "inferred"     # single observation, or reasoned from context
 ROM = "rom"               # read from the ROM's own item table
 
-#: Where the generated table lands, relative to the repo root.
-DEFAULT_TABLE = Path(__file__).resolve().parents[2] / "data" / "items.json"
+def _find_default_table() -> Path:
+    """Locate data/items.json, running from source or from a frozen build.
+
+    A PyInstaller bundle unpacks to a temp directory, so the repo-relative
+    path is wrong there. Beside-the-executable is checked first so a user can
+    drop in a corrected table without waiting for a new release.
+    """
+    candidates = []
+    if getattr(sys, "frozen", False):
+        candidates.append(Path(sys.executable).resolve().parent / "data" / "items.json")
+        bundled = getattr(sys, "_MEIPASS", None)
+        if bundled:
+            candidates.append(Path(bundled) / "data" / "items.json")
+    candidates.append(Path(__file__).resolve().parents[2] / "data" / "items.json")
+    for candidate in candidates:
+        if candidate.is_file():
+            return candidate
+    return candidates[-1]
+
+
+#: Where the generated table lands. Resolved once at import.
+DEFAULT_TABLE = _find_default_table()
 
 #: id -> (name, provenance)
 #:

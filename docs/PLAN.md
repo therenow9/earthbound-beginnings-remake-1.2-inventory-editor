@@ -18,17 +18,22 @@ not require replicating anything else those tools do.
 **Done.** Container layer: block detection by signature scan, layout detection,
 checksum validation and repair, mirror-copy consistency, automatic backups.
 Character records, inventories, equipment pointers. CLI: `info`, `items`,
-`give`, `take`, `swap`, `equip`, `unequip`, `diff`. 90 tests, no ROM or
-personal save data required.
+`give`, `take`, `swap`, `equip`, `unequip`, `diff`. No ROM or personal save
+data required to run the tests.
 
 **Item table: done.** All 253 named ids, extracted from the ROM. `ebbr info`
 now resolves every item in the test saves with no `unknown 0x..` left.
 
 **In-game verified.** Edits made by the tool load correctly in the real game;
-`tools/ingame_verify.py` re-runs the check. Inventory editing is done.
+`tools/ingame_verify.py` re-runs the check.
 
-**Next: the GUI (Phase 5).** The engine is finished and proven — what is left
-is that driving it from a command line is not how anyone wants to edit a bag.
+**GUI: done (Phase 5).** `ebbr-gui`, or a standalone .exe built by
+`packaging/build_exe.py`. Save slot and character selection, bag add / remove /
+reorder, equipment, HP, PP and money. Verified the same way as the CLI: a save
+written by the GUI loads in the game with every bag byte-identical to what was
+written.
+
+**Next: Phase 4 release.**
 
 ## Phase 1 — validate against real saves — DONE
 
@@ -87,11 +92,15 @@ entries differ. `--compare` emits that diff.
   save loaded by mistake, and a blank SRAM caused by a ROM/filename mismatch.
   The first is now correctly detected and refused rather than erroring out.
 
-## Phase 5 — GUI — NEXT
+## Phase 5 — GUI — DONE
 
-The one thing standing between this and something pleasant to use. Scope stays
-inventory and equipment: open a save, see the four bags, move items around,
-save.
+`src/ebbr/gui.py`, tkinter, no dependencies. Save-slot picker, a tab per
+character, bag list with add / remove / reorder, equipment dropdowns, and
+editable HP, PP and money. `packaging/build_exe.py` freezes it into a single
+.exe for people without Python.
+
+The notes below are why it is built the way it is; they still apply to anyone
+extending it.
 
 **Build it on the existing model, not beside it.** Everything the GUI needs is
 already on `Character` in `src/ebbr/sram.py`:

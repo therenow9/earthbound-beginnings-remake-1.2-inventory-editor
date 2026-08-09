@@ -44,8 +44,8 @@ def build(seed: int = 0, slots: int = 1) -> bytes:
             rec = L.CHAR_TABLE + L.CHAR_STRIDE * cid
             hp = 200 + 50 * cid
             pp = 100 + 10 * cid
-            for fld, val in ((L.HP_CUR, hp), (L.HP_MAX, hp),
-                             (L.PP_CUR, pp), (L.PP_MAX, pp)):
+            for fld, val in ((L.HP_CUR, hp), (L.HP_ALT, hp),
+                             (L.PP_CUR, pp), (L.PP_ALT, pp)):
                 data[rec + fld:rec + fld + 2] = val.to_bytes(2, "little")
             data[rec + L.CHAR_ID] = cid
 

@@ -215,7 +215,7 @@ def test_names(save):
 def test_character_stats(save):
     ninten = save.populated[0].character(0)
     assert ninten.name == "Ninten"
-    assert ninten.hp == 200 and ninten.hp_max == 200
+    assert ninten.hp == 200
     assert ninten.pp == 100
 
 

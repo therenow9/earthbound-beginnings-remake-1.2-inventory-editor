@@ -101,9 +101,26 @@ class Block:
     def u32(self, off: int) -> int:
         return int.from_bytes(self.read(off, 4), "little")
 
+    def set_u16(self, off: int, val: int) -> None:
+        self.write(off, (val & 0xFFFF).to_bytes(2, "little"))
+
+    def set_u32(self, off: int, val: int) -> None:
+        self.write(off, (val & 0xFFFFFFFF).to_bytes(4, "little"))
+
+    #: Widest value the money field can hold. The game shows far less than
+    #: this, but the field itself is a u32 and nothing here needs to guess
+    #: where the game's own display gives up.
+    MONEY_MAX = 0xFFFFFFFF
+
     @property
     def money(self) -> int:
         return self.u32(L.MONEY)
+
+    @money.setter
+    def money(self, val: int) -> None:
+        if not 0 <= val <= Block.MONEY_MAX:
+            raise SaveError(f"money must be 0..{Block.MONEY_MAX}")
+        self.set_u32(L.MONEY, val)
 
     @property
     def party(self) -> list[int]:
@@ -140,21 +157,36 @@ class Character:
     def name(self) -> str:
         return self.block.name(self.char_id)
 
+    #: HP and PP are u16, but the game's own displays are three digits wide.
+    #: Values past this render as garbage even though they store fine.
+    STAT_MAX = 999
+
+    def _check_stat(self, what: str, val: int) -> int:
+        if not 0 <= val <= Character.STAT_MAX:
+            raise SaveError(f"{what} must be 0..{Character.STAT_MAX}")
+        return val
+
     @property
     def hp(self) -> int:
         return self.block.u16(self.base + L.HP_CUR)
 
-    @property
-    def hp_max(self) -> int:
-        return self.block.u16(self.base + L.HP_MAX)
+    @hp.setter
+    def hp(self, val: int) -> None:
+        val = self._check_stat("HP", val)
+        # Both copies, always. They are equal in every real save; leaving the
+        # second one stale would create a pairing the game never writes.
+        self.block.set_u16(self.base + L.HP_CUR, val)
+        self.block.set_u16(self.base + L.HP_ALT, val)
 
     @property
     def pp(self) -> int:
         return self.block.u16(self.base + L.PP_CUR)
 
-    @property
-    def pp_max(self) -> int:
-        return self.block.u16(self.base + L.PP_MAX)
+    @pp.setter
+    def pp(self, val: int) -> None:
+        val = self._check_stat("PP", val)
+        self.block.set_u16(self.base + L.PP_CUR, val)
+        self.block.set_u16(self.base + L.PP_ALT, val)
 
     @property
     def inventory(self) -> list[int]:
@@ -287,7 +319,7 @@ class Character:
         return None
 
     def __repr__(self) -> str:
-        return f"<Character {self.name} HP {self.hp}/{self.hp_max}>"
+        return f"<Character {self.name} HP {self.hp} PP {self.pp}>"
 
 
 # --- file --------------------------------------------------------------------
@@ -303,6 +335,21 @@ class SaveFile:
     @classmethod
     def load(cls, path: str | Path) -> "SaveFile":
         return cls(Path(path).read_bytes())
+
+    @classmethod
+    def load_editable(cls, path: str | Path) -> "SaveFile":
+        """Load a save, refusing anything this tool must not write to.
+
+        Vanilla EarthBound saves parse fine but have different block geometry;
+        writing remake geometry over one corrupts it.
+        """
+        path = Path(path)
+        s = cls.load(path)
+        if s.layout is not L.EBBR:
+            raise SaveError(
+                f"{path.name} is a {s.layout.name} save, not the remake. "
+                f"Editing it with this tool would corrupt it.")
+        return s
 
     def save(self, path: str | Path) -> None:
         Path(path).write_bytes(bytes(self.buf))
