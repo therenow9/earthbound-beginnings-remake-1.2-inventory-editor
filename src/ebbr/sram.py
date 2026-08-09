@@ -152,6 +152,24 @@ class Block:
         for cid in range(L.CHAR_COUNT):
             self.character(cid)._set_present(cid in char_ids)
 
+    def move_in_party(self, char_id: int, delta: int) -> bool:
+        """Shift a character earlier (-1) or later (+1) in the party order.
+
+        Returns False and changes nothing when they are already at the end
+        they are being moved toward, so a button at the edge is a no-op rather
+        than an error.
+        """
+        order = self.party
+        if char_id not in order:
+            raise SaveError(f"{L.CHARACTERS[char_id]} is not in the party")
+        here = order.index(char_id)
+        there = here + delta
+        if not 0 <= there < len(order):
+            return False
+        order[here], order[there] = order[there], order[here]
+        self.party = order
+        return True
+
     def name(self, char_id: int) -> str:
         off = L.NAME_TABLE + L.NAME_STRIDE * char_id
         return L.decode_text(self.read(off, L.NAME_STRIDE))

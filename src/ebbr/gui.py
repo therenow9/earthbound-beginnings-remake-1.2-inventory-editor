@@ -117,6 +117,13 @@ class CharacterPane(ttk.Frame):
         ttk.Checkbutton(membership, text="In the party",
                         variable=self.in_party,
                         command=self._commit_party).pack(side="left")
+        ttk.Label(membership, text="Order").pack(side="left", padx=(14, 4))
+        self.earlier = ttk.Button(membership, text="◀", width=3,
+                                  command=lambda: self._move_in_party(-1))
+        self.earlier.pack(side="left")
+        self.later = ttk.Button(membership, text="▶", width=3,
+                                command=lambda: self._move_in_party(1))
+        self.later.pack(side="left", padx=(2, 0))
         self.party_note = ttk.Label(membership, text="", foreground="#777")
         self.party_note.pack(side="left", padx=10)
 
@@ -197,10 +204,18 @@ class CharacterPane(ttk.Frame):
             return
         keep = self.listbox.curselection()
         party = self.app.block().party
-        self.in_party.set(self.char_id in party)
+        here = party.index(self.char_id) if self.char_id in party else None
+        self.in_party.set(here is not None)
         self.party_note.configure(
-            text=f"position {party.index(self.char_id) + 1} of {len(party)}"
-                 if self.char_id in party else "not in the party")
+            text=f"position {here + 1} of {len(party)}"
+                 if here is not None else "not in the party")
+        # Grey out a move that cannot happen, rather than let it click and
+        # do nothing.
+        self.earlier.state(
+            ["!disabled"] if here not in (None, 0) else ["disabled"])
+        self.later.state(
+            ["!disabled"] if here is not None and here < len(party) - 1
+            else ["disabled"])
         for which, var in self.stat_vars.items():
             var.set(str(ch.stat(which) if which in L.STAT_OFFSETS
                         else getattr(ch, which)))
@@ -350,6 +365,22 @@ class CharacterPane(ttk.Frame):
         label = self.LABELS.get(which, which)
         if not self.app.apply(do, f"{ch.name} {label} = {val}{note}"):
             var.set(str(current))
+
+    def _move_in_party(self, delta: int) -> None:
+        blk = self.app.block()
+        if blk is None or self.char_id not in blk.party:
+            return
+        where = "earlier" if delta < 0 else "later"
+        moved = {}
+
+        def do(b):
+            moved["ok"] = b.move_in_party(self.char_id, delta)
+
+        self.app.apply(do, f"{L.CHARACTERS[self.char_id]} moved {where}")
+        if not moved.get("ok"):
+            self.app.status(
+                f"{L.CHARACTERS[self.char_id]} is already "
+                f"{'first' if delta < 0 else 'last'} in the party")
 
     def _commit_party(self) -> None:
         blk = self.app.block()

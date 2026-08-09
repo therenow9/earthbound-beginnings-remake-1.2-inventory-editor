@@ -61,7 +61,7 @@ playthrough you'd be upset to lose.
 - Change **HP and PP**, current and maximum
 - Change **level, EXP and stats**
 - Change **money**
-- Add or remove **party members**
+- Add, remove and **reorder party members**
 - Works on any of your three save slots
 
 ## What it can't do
@@ -141,7 +141,9 @@ that spot first.
 that character is carrying and can actually wear, so if one looks empty, give
 them a suitable item first. Food won't appear in the weapon slot.
 
-**Party members** — each character has an "In the party" tick box.
+**Party members** — each character has an "In the party" tick box, and the
+**◀ ▶** buttons beside it move them earlier or later in the party order.
+The position is shown next to them ("position 2 of 4").
 
 **HP and PP** have two boxes each: current, then maximum. Current can't go above
 maximum, so raise the maximum first if you want a big number.

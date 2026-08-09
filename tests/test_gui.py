@@ -411,6 +411,36 @@ def test_gui_accepts_exp_typed_with_commas(app):
     assert app.block().character(0).exp == 1050480
 
 
+def test_party_reorder_buttons_move_a_character(app):
+    app.apply(lambda b: setattr(b, "party", [0, 1, 2]), "party")
+    app.panes[1]._move_in_party(-1)
+    assert app.block().party == [1, 0, 2]
+    app.panes[1]._move_in_party(1)
+    assert app.block().party == [0, 1, 2]
+
+
+def test_reorder_buttons_are_disabled_at_the_ends(app):
+    app.apply(lambda b: setattr(b, "party", [0, 1, 2]), "party")
+    for pane in app.panes:
+        pane.refresh()
+
+    def off(button):
+        return "disabled" in button.state()
+
+    assert off(app.panes[0].earlier), "first member can still move earlier"
+    assert not off(app.panes[0].later)
+    assert not off(app.panes[2].earlier)
+    assert off(app.panes[2].later), "last member can still move later"
+    # Teddy is out of the party entirely.
+    assert off(app.panes[3].earlier) and off(app.panes[3].later)
+
+
+def test_reorder_at_the_edge_changes_nothing(app):
+    app.apply(lambda b: setattr(b, "party", [0, 1, 2]), "party")
+    app.panes[0]._move_in_party(-1)
+    assert app.block().party == [0, 1, 2]
+
+
 def test_saving_with_no_changes_is_byte_identical(app, savefile):
     original = savefile.read_bytes()
     app.write()

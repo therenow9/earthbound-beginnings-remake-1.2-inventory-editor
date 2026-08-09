@@ -403,6 +403,40 @@ def test_party_rejects_duplicates_and_strangers(save):
         blk.party = [0, 1, 2, 3, 0]
 
 
+def test_move_in_party_swaps_neighbours(save):
+    blk = save.populated[0]
+    blk.party = [0, 1, 2]
+    assert blk.move_in_party(1, -1) is True
+    assert blk.party == [1, 0, 2]
+    assert blk.move_in_party(1, 1) is True
+    assert blk.party == [0, 1, 2]
+
+
+def test_move_in_party_stops_at_the_ends(save):
+    blk = save.populated[0]
+    blk.party = [0, 1, 2]
+    assert blk.move_in_party(0, -1) is False
+    assert blk.move_in_party(2, 1) is False
+    assert blk.party == [0, 1, 2], "a refused move still changed the order"
+
+
+def test_move_in_party_keeps_everyone_present(save):
+    """Reordering must not accidentally drop or revive anyone."""
+    blk = save.populated[0]
+    blk.party = [3, 0, 2]
+    before = {c: blk.character(c).in_party for c in range(L.CHAR_COUNT)}
+    blk.move_in_party(3, 1)
+    assert sorted(blk.party) == [0, 2, 3]
+    assert {c: blk.character(c).in_party for c in range(L.CHAR_COUNT)} == before
+
+
+def test_move_rejects_someone_not_in_the_party(save):
+    blk = save.populated[0]
+    blk.party = [0, 1]
+    with pytest.raises(SaveError, match="not in the party"):
+        blk.move_in_party(3, -1)
+
+
 def test_in_party_reflects_the_roster(save):
     blk = save.populated[0]
     blk.party = [1]

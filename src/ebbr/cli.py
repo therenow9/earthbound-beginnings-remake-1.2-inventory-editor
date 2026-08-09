@@ -231,6 +231,25 @@ def cmd_party(args) -> int:
         return 0
 
     current = blk.party
+    if args.action in ("earlier", "later"):
+        if len(args.who) != 1:
+            print(f"{args.action} takes one character", file=sys.stderr)
+            return 1
+        cid = _resolve_char(args.who[0])
+        delta = -1 if args.action == "earlier" else 1
+        moved = {}
+        s.edit_slot(args.save_slot,
+                    lambda b: moved.update(ok=b.move_in_party(cid, delta)))
+        if not moved.get("ok"):
+            edge = "first" if delta < 0 else "last"
+            print(f"{L.CHARACTERS[cid]} is already {edge} in the party",
+                  file=sys.stderr)
+            return 1
+        _write(s, path, args)
+        print("party: " + ", ".join(
+            L.CHARACTERS[c] for c in s.slot(args.save_slot)[0].party))
+        return 0
+
     if args.action == "set":
         wanted = [_resolve_char(name) for name in args.who]
     elif args.action == "add":
@@ -350,7 +369,8 @@ def main(argv=None) -> int:
 
     pp_ = sub.add_parser("party", help="show or change who is in the party")
     pp_.add_argument("file")
-    pp_.add_argument("action", nargs="?", choices=("add", "remove", "set"))
+    pp_.add_argument("action", nargs="?",
+                     choices=("add", "remove", "set", "earlier", "later"))
     pp_.add_argument("who", nargs="*", help="character names")
     pp_.add_argument("--save-slot", type=int, default=0)
     pp_.add_argument("--no-backup", action="store_true")

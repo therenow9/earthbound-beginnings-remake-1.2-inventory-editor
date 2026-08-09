@@ -75,7 +75,7 @@ though the editing itself works.
 - Change HP and PP, current and maximum
 - Change level, EXP and the seven stats
 - Change money
-- Add or remove party members
+- Add, remove and reorder party members
 - Any of your three save slots
 
 ## What it does not do
