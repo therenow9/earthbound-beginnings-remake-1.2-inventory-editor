@@ -121,6 +121,14 @@ STATS = ("offense", "defense", "speed", "fight", "wisdom", "strength", "force")
 STAT_OFFSETS = {name: 0x16 + i for i, name in enumerate(STATS)}
 STAT_LIMIT = 255        # one byte each
 
+#: Set to 1 while a character is not in the party, 0 once they join.
+#: VERIFIED: flipped 1 -> 0 in Teddy's record between the two real saves.
+ABSENT_FLAG = 0x0F
+
+#: `FF FF` while a character is not in the party, `00 00` once they join.
+#: VERIFIED alongside ABSENT_FLAG in the same pair of saves.
+JOIN_MARKER = 0x38
+
 CHAR_ID = 0x36
 
 #: Current HP/PP, u16 LE. VERIFIED in-game: writing 777 here made the Status

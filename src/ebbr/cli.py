@@ -217,6 +217,38 @@ def cmd_equip(args) -> int:
     return 0
 
 
+def cmd_party(args) -> int:
+    path = Path(args.file)
+    s = _load_editable(path)
+    blk = s.slot(args.save_slot)[0]
+
+    if not args.action:
+        print("party: " + ", ".join(L.CHARACTERS[c] for c in blk.party))
+        absent = [L.CHARACTERS[c] for c in range(L.CHAR_COUNT)
+                  if c not in blk.party]
+        if absent:
+            print("out:    " + ", ".join(absent))
+        return 0
+
+    current = blk.party
+    if args.action == "set":
+        wanted = [_resolve_char(name) for name in args.who]
+    elif args.action == "add":
+        wanted = current + [c for c in (_resolve_char(n) for n in args.who)
+                            if c not in current]
+    else:
+        drop = {_resolve_char(n) for n in args.who}
+        wanted = [c for c in current if c not in drop]
+        if not wanted:
+            print("refusing: that would empty the party", file=sys.stderr)
+            return 1
+
+    s.edit_slot(args.save_slot, lambda b: setattr(b, "party", wanted))
+    _write(s, path, args)
+    print("party: " + ", ".join(L.CHARACTERS[c] for c in wanted))
+    return 0
+
+
 def cmd_items(args) -> int:
     #: Only call out what the user should be careful with. ROM-derived names
     #: are the common case now, so flagging them would be noise.
@@ -315,6 +347,15 @@ def main(argv=None) -> int:
     pu = editing_parser("unequip", "clear an equip slot")
     pu.add_argument("slot_name", help=" | ".join(L.EQUIP_SLOTS))
     pu.set_defaults(func=cmd_unequip)
+
+    pp_ = sub.add_parser("party", help="show or change who is in the party")
+    pp_.add_argument("file")
+    pp_.add_argument("action", nargs="?", choices=("add", "remove", "set"))
+    pp_.add_argument("who", nargs="*", help="character names")
+    pp_.add_argument("--save-slot", type=int, default=0)
+    pp_.add_argument("--no-backup", action="store_true")
+    pp_.add_argument("-n", "--dry-run", action="store_true")
+    pp_.set_defaults(func=cmd_party)
 
     pt = sub.add_parser("items", help="list known item ids")
     pt.add_argument("query", nargs="?")

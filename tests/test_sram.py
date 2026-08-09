@@ -342,6 +342,74 @@ def test_swap_rejects_empty_slot(save):
         ch.swap_slots(0, L.INVENTORY_SIZE - 1)
 
 
+# --- party membership --------------------------------------------------------
+#
+# The roster is only half of it. An unrecruited character also carries an
+# absent flag and a join marker and sits on 0 HP, all confirmed against the
+# pair of real saves that bracket Teddy joining.
+
+def test_party_round_trips(save):
+    blk = save.populated[0]
+    blk.party = [0, 2]
+    assert blk.party == [0, 2]
+
+
+def test_party_order_is_preserved(save):
+    blk = save.populated[0]
+    blk.party = [3, 1, 0]
+    assert blk.party == [3, 1, 0]
+
+
+def test_joining_clears_the_absent_flag_and_join_marker(save):
+    blk = save.populated[0]
+    blk.party = [0]
+    joined, left = blk.character(0), blk.character(1)
+    assert blk.read(joined.base + L.ABSENT_FLAG, 1) == b"\x00"
+    assert blk.read(joined.base + L.JOIN_MARKER, 2) == b"\x00\x00"
+    assert blk.read(left.base + L.ABSENT_FLAG, 1) == b"\x01"
+    assert blk.read(left.base + L.JOIN_MARKER, 2) == b"\xFF\xFF"
+
+
+def test_joining_revives_a_character_on_zero_hp(save):
+    """An unrecruited character is on 0 HP; adding them must not add a corpse."""
+    blk = save.populated[0]
+    ch = blk.character(3)
+    ch.hp = 0
+    blk.party = [0, 3]
+    assert blk.character(3).hp == blk.character(3).hp_max
+
+
+def test_joining_leaves_a_healthy_character_alone(save):
+    blk = save.populated[0]
+    ch = blk.character(3)
+    ch.hp = 7
+    blk.party = [0, 3]
+    assert blk.character(3).hp == 7
+
+
+def test_party_cannot_be_emptied(save):
+    blk = save.populated[0]
+    with pytest.raises(SaveError, match="cannot be empty"):
+        blk.party = []
+
+
+def test_party_rejects_duplicates_and_strangers(save):
+    blk = save.populated[0]
+    with pytest.raises(SaveError, match="twice"):
+        blk.party = [1, 1]
+    with pytest.raises(SaveError, match="no character"):
+        blk.party = [9]
+    with pytest.raises(SaveError, match="at most"):
+        blk.party = [0, 1, 2, 3, 0]
+
+
+def test_in_party_reflects_the_roster(save):
+    blk = save.populated[0]
+    blk.party = [1]
+    assert blk.character(1).in_party
+    assert not blk.character(0).in_party
+
+
 # --- level, experience and base stats ----------------------------------------
 
 def test_level_round_trips(save):

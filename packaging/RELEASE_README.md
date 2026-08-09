@@ -1,123 +1,187 @@
 # EBBR Save Editor
 
-Edit your party's items, equipment and stats in **EarthBound Beginnings
-Remake**.
+A simple save editor for **EarthBound Beginnings Remake**. It lets you change
+your party's items, equipment and stats.
 
 Normal EarthBound save editors don't work on the remake — it stores saves
-differently, so they'll either refuse your file or break it. This one is built
-for the remake.
-
-> ⚠️ **Keep a backup.** The editor makes one for you every time it saves, but
-> a bad edit can still cost you a file.
+differently, so they'll either refuse your file or wreck it. This one is built
+for the remake specifically.
 
 ---
 
-## Getting started
+# ⚠️ READ THIS FIRST
 
-1. Download **`EBBR-Save-Editor.exe`** below and run it.
-2. **File → Open**, and pick your save file.
-3. Make your changes, then **File → Save**.
+**This is experimental software. It can and will break saves.**
 
-That's it. You don't need the ROM, Python, or anything else installed — just
-the .exe and your save.
+Not "might, in theory". Editing a save file means writing bytes into a game
+that was never designed to be edited, and there are things in there nobody has
+figured out yet. Sooner or later something will go wrong for somebody.
 
-Windows may say the publisher is unknown, because the file isn't
-code-signed. Click **More info → Run anyway**.
+**So: back up your save before you touch it.**
 
-## Finding your save file
+Copy your `.srm` somewhere safe — your desktop, a folder called `backup`,
+anywhere. Do it every time. The editor also makes its own backup file next to
+your save each time it saves, but do not rely on that alone.
 
-Your save is a **`.srm`** file, named after your ROM. If your ROM is
-`EBBR.sfc`, look for `EBBR.srm` next to it, or in your emulator's saves folder.
+If your save is precious and irreplaceable, honestly, think twice before
+using this on it.
 
-**Close your emulator before editing.** It writes the save file when it closes,
-which will wipe out your changes. This is the number one reason edits seem to
-"not work".
+### Some of this is riskier than the rest
 
-## What you can change
+Not everything here is equally tested, and it's worth knowing which parts are
+which.
 
-| | |
-|---|---|
-| **Items** | add, remove and reorder each character's bag |
-| **Equipment** | weapon, body, arms and other |
-| **HP and PP** | current and maximum |
-| **Level and EXP** | |
-| **Stats** | Offense, Defense, Speed, Fight, Wisdom, Strength, Force |
-| **Money** | |
+**Items and equipment — mostly safe.** This is where the tool started and
+where nearly all the testing went. Edits have been checked against the running
+game repeatedly.
 
-You can pick any of the three save slots at the top.
+**Removing party members, and pushing levels or stats to extremes — very
+untested.** Take out someone the story expects to be there and you could get
+stuck in a scene that never finishes. Set a level of 99 with level-20 stats
+and you've made something the game would never create on its own; nobody knows
+how it behaves at the edges.
 
-PSI, melodies and story progress can't be changed. We haven't figured out where
-the game keeps those, and guessing is how save editors corrupt files.
+If you want to play with those, do it on a copy of your save, not on a
+playthrough you'd be upset to lose.
+
+---
+
+## What it can do
+
+- Add, remove and reorder **items** in each character's bag
+- Change **equipment** — weapon, body, arms, other
+- Change **HP and PP**, current and maximum
+- Change **level, EXP and stats**
+- Change **money**
+- Add or remove **party members**
+- Works on any of your three save slots
+
+## What it can't do
+
+This is a small tool. It edits inventory and stats and that's about it. It is
+**not** a full-featured editor like [Oh Mother](https://github.com/clickysteve/Oh-Mother-Earthbound-Save-File-Editor)
+(which is for the original EarthBound, not the remake).
+
+Things it does **not** touch:
+
+- **Story progress and event flags.** You cannot skip ahead, unlock areas, mark
+  a boss as beaten, or fix a broken playthrough. None of that is editable.
+- **PSI abilities.** You can't teach or remove them.
+- **Melodies.**
+- **Where you are on the map.**
+
+Some other limits worth knowing:
+
+- **Stats max out at 255.** That's a limit of the save format, not a choice.
+- **HP and PP max out at 999** in this editor.
+- **Changing level does not change stats.** The game calculates stat growth
+  internally in a way we can't reproduce, so if you bump someone to level 60
+  you'll need to set their stats yourself.
+- **Offense and Defense don't stick.** The game recalculates those two whenever
+  a character changes equipment, so your edit gets overwritten. The other five
+  stats stay.
+- **Adding a party member early is untested territory.** The story doesn't know
+  they've joined, so scenes may behave strangely. Removing someone the story
+  needs could leave you stuck.
+
+---
 
 ## How to use it
 
-**Adding an item** — click **Add…** and start typing. Searching works on
-names, so type "pendant" to see all of them. Pick one and it goes into the bag.
+**1. Close your emulator completely.**
 
-If you want it in a particular spot, click that spot in the bag first.
+Really. Your emulator writes the save file when it closes, so if it's open it
+will overwrite whatever you change. This is the number one reason people think
+the editor "didn't work".
 
-**Removing** — click the item, then **Remove**.
+**2. Find your save file.**
 
-**Reordering** — click an item and use the **▲ ▼** buttons.
+It's a `.srm` file named after your ROM. If your ROM is `EBBR.sfc`, your save
+is `EBBR.srm`, usually sitting right next to it or in your emulator's saves
+folder.
 
-**Equipping** — use the dropdowns on the right. They only show things that
-character is carrying and can actually wear, so if a dropdown looks empty, give
-them a suitable item first.
+**3. Back it up.** Copy it somewhere safe. Yes, again. 🙂
 
-## Good to know
+**4. Run `EBBR-Save-Editor.exe`,** then **File → Open** and pick your save.
 
-**You can't equip the wrong kind of thing.** Food won't show up in the weapon
-slot. The editor uses the game's own item categories, so it agrees with the
-game.
+Windows may say the publisher is unknown, because the file isn't signed by a
+company. Click **More info → Run anyway**.
 
-**HP and PP can't go above the maximum.** Type a bigger number and it drops
-back to the cap. Want more? Raise the maximum first — it's the second box. Both
-max out at 999.
+**5. Make your changes, then File → Save.**
 
-**Offense and Defense don't always stick.** The game recalculates those two
-whenever a character changes equipment, so your edit will be replaced next time
-they swap gear. The other five stats stay put.
+**6. Open your emulator and check it worked** before you play for an hour.
 
-**Changing level doesn't change stats.** The game works those out internally
-and we can't reproduce it, so set the stats yourself if you want them to match.
+You don't need the ROM, Python, or anything else installed for this — just the
+.exe and your save file.
+
+---
+
+## Getting around
+
+Pick a character with the tabs along the top. Their bag is on the left, their
+equipment on the right.
+
+**Add an item** — click **Add…** and start typing. Type "pendant" to see all
+the pendants, and so on. If you want it in a specific spot in the bag, click
+that spot first.
+
+**Remove an item** — click it, then **Remove**.
+
+**Move an item** — click it and use the **▲ ▼** buttons.
+
+**Equip something** — use the dropdowns on the right. They only show things
+that character is carrying and can actually wear, so if one looks empty, give
+them a suitable item first. Food won't appear in the weapon slot.
+
+**Party members** — each character has an "In the party" tick box.
+
+**HP and PP** have two boxes each: current, then maximum. Current can't go above
+maximum, so raise the maximum first if you want a big number.
+
+---
 
 ## If something goes wrong
 
 **"… is a EarthBound (USA) save, not the remake."**
 That's a save from the original EarthBound. This editor only works on the
-remake — editing a vanilla save would break it, so it stops.
+remake, and editing a vanilla save would break it, so it stops.
 
 **"This SRAM contains no saves."**
-The file is empty. Usually this means the emulator didn't match your save to
-your ROM, and reset it. Check that your ROM and `.srm` have the same name and
-sit in the same folder, away from any other EarthBound files.
+The file is empty. This usually means your emulator couldn't match the save to
+your ROM and reset it. Check that your ROM and `.srm` have the same name and
+live in the same folder, away from any other EarthBound files.
 
 **My change didn't show up in the game.**
-The emulator was probably still open. Close it fully, then edit the save.
+Your emulator was probably still open. Close it fully, then edit the save.
 
-## Found a bug?
+**Something is genuinely broken.**
+Restore your backup. This is why you made one.
+
+---
+
+## Reporting a bug
 
 [Open an issue here.](https://github.com/therenow9/earthbound-beginnings-remake-1.2-inventory-editor/issues)
 
-Please check the three problems above first — those are the most common
-reports, and none of them is actually a bug.
+Please check the problems above first — those are the most common reports and
+none of them is really a bug.
 
 It helps a lot if you include:
 
 - **What you did**, step by step
 - **What happened**, and what you expected instead
-- **Your `.srm` file**, if you don't mind sharing — this is by far the most
-  useful thing, since it usually makes the problem easy to reproduce
-- **Which version** of the editor (Help → About) and of the remake you're using
+- **Your `.srm` file**, if you don't mind sharing it — this makes almost any
+  problem easy to reproduce
+- **Which version** of the editor (Help → About) and of the remake
 
 Copy in the exact error message if you saw one.
 
-**Please don't attach a ROM or patch file.** This project doesn't include any
-game data and can't accept any. Your save file on its own is fine.
+**Please don't attach a ROM or patch file.** This project contains no game data
+and can't accept any. Your save file on its own is fine.
 
-One thing that isn't a bug: Offense and Defense showing different numbers in
-the editor and the game, as explained above. Same for maximum HP and PP after
-levelling up. Anything else that doesn't match is worth telling us about.
+Two things that aren't bugs, as above: Offense and Defense showing different
+numbers in the editor and the game, and stats not changing when you change
+level.
 
 ---
 
@@ -129,4 +193,5 @@ Contains no ROM, patch, or game data. MIT licensed.
 EarthBound Beginnings Remake is a fan project by Gabbls and contributors,
 building on work begun by Clyde "Tomato" Mandelin. Thanks to
 [Oh Mother](https://github.com/clickysteve/Oh-Mother-Earthbound-Save-File-Editor)
-by clickysteve, which does the same job for the original EarthBound.
+by clickysteve, which does a much bigger job for the original EarthBound and
+was the model for how to approach this.

@@ -21,7 +21,8 @@ them is how save editors corrupt files.
 
 Working: container handling (block detection, checksum validation and repair,
 mirror-copy consistency), character records, inventories, equipment, HP, PP,
-level, experience, the seven base stats, and money — through a GUI or a CLI.
+level, experience, the seven base stats, party membership, and money — through
+a GUI or a CLI.
 
 The item table is complete: all 253 named ids, read straight out of the ROM by
 [tools/extract_items.py](tools/extract_items.py). You supply your own ROM; the
@@ -86,6 +87,11 @@ ebbr swap save.srm Ninten 0 3                 # reorder two slots
 
 ebbr equip save.srm Teddy weapon "Silver sword"
 ebbr unequip save.srm Teddy body
+
+ebbr party save.srm                           # who is in, who is out
+ebbr party save.srm add Teddy                 # force someone in early
+ebbr party save.srm remove Lloyd
+ebbr party save.srm set Ninten Ana            # replace the roster outright
 
 ebbr diff a.srm 0 0 --file-b b.srm            # field-named byte diff
 ```

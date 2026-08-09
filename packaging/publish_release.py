@@ -45,46 +45,73 @@ def version() -> str:
 
 
 NOTES = """\
-First public release. Inventory and equipment editing for **EarthBound
-Beginnings Remake**, with a GUI.
+A simple save editor for **EarthBound Beginnings Remake** — items, equipment
+and stats.
 
-Download **EBBR-Save-Editor.exe** below and run it — nothing to install, and
-**no ROM required**. The editor only ever opens your `.srm`; all 253 item names
-are built in. Read **RELEASE_README.md** for how to use it, where to find your
-save, and how to report a bug.
+## ⚠️ This is experimental. It can and will break saves.
 
-### What it does
+**Back up your `.srm` before you use this.** Every time. The editor writes its
+own backup too, but do not rely on that alone. If your save is precious and
+irreplaceable, think twice.
 
-- Edit each character's 14-slot bag: add, remove, reorder
-- Set equipment: weapon, pendant, band, coin
-- Edit current HP, PP and money
-- Works on any of the three save slots
-- Writes a `.bak` every time it saves
+Also: **close your emulator before editing.** It writes the save file when it
+closes and will overwrite your changes. This is the single most common reason
+people think the editor did nothing.
 
-Levels, EXP, stats, PSI and story flags are deliberately left alone.
+## What it does
 
-### Why you can trust it with your save
+- Add, remove and reorder items in each character's bag
+- Change equipment: weapon, body, arms, other
+- Change HP and PP, current and maximum
+- Change level, EXP and the seven stats
+- Change money
+- Add or remove party members
+- Any of your three save slots
 
-Saves written by this editor are loaded in an emulator and the game's own live
-inventory is read back out of its RAM and compared byte for byte against what
-was written — for every character. The Goods menu is checked too, including
-which items still carry the `E` equipped marker. `tools/ingame_verify.py` in
-the repo re-runs that check on demand.
+## What it does not do
 
-It also keeps the two mirror copies each save slot contains in step and
-recomputes both checksums, which is what makes the game accept the file.
+This is a small tool for inventory and stats. It is **not** a full-featured
+editor like Oh Mother, which does a much bigger job for the original
+EarthBound.
 
-Still: it is a save editor for a fan ROM hack. Keep the backup.
+It cannot touch **story progress or event flags** — you cannot skip ahead,
+unlock areas, mark a boss beaten, or repair a broken playthrough. PSI,
+melodies and map position are also off limits. Nobody has worked out where the
+game keeps those, and guessing is how save editors corrupt files.
 
-### Notes
+Other limits: stats cap at 255 (a limit of the save format, not a choice),
+changing level does not recalculate stats, and Offense/Defense are overwritten
+by the game whenever a character changes equipment.
 
-- Windows will warn about an unknown publisher; the .exe is not code-signed.
-- Vanilla EarthBound saves are refused on purpose — the remake changed the
-  block geometry, and writing remake layout to a vanilla save would corrupt it.
-- Close your emulator fully before editing. It writes SRAM out on exit and
-  will overwrite your changes.
+## Some of this is riskier than the rest
 
-### Found a bug?
+**Items and equipment** have had the most testing and appear to be mostly
+safe. That is where the tool started and where most of the work went.
+
+**Removing party members, and pushing levels or stats to extremes, are very
+lightly tested.** Removing someone the story expects to be present could leave
+you stuck in a scene that never ends. An implausible level with mismatched
+stats is a state the game would never produce on its own, and nobody knows
+what it does at the edges.
+
+If you are going to experiment with those, do it on a copy, not on a
+playthrough you care about.
+
+## Getting it running
+
+Download **EBBR-Save-Editor.exe** below. Nothing to install and **no ROM
+needed** — it only ever opens your `.srm`, and all 253 item names are built in.
+
+Windows will warn about an unknown publisher because the file is not
+code-signed. More info → Run anyway.
+
+**Read RELEASE_README.md** below for the full guide: finding your save file,
+what each control does, and what to do when something goes wrong.
+
+Vanilla EarthBound saves are refused on purpose — the remake stores saves
+differently, and writing remake data into a vanilla save would wreck it.
+
+## Found a bug?
 
 Open an issue with what you did, what happened, and your `.srm` if you are
 willing to share it — that makes almost anything reproducible in seconds.

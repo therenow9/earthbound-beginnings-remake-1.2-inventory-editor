@@ -110,6 +110,15 @@ class CharacterPane(ttk.Frame):
             entry.bind("<Return>", lambda _e, w=which: self._commit_stat(w))
             return entry
 
+        membership = ttk.Frame(self)
+        membership.pack(fill="x", pady=(0, 4))
+        self.in_party = tk.BooleanVar()
+        ttk.Checkbutton(membership, text="In the party",
+                        variable=self.in_party,
+                        command=self._commit_party).pack(side="left")
+        self.party_note = ttk.Label(membership, text="", foreground="#777")
+        self.party_note.pack(side="left", padx=10)
+
         vitals = ttk.Frame(self)
         vitals.pack(fill="x", pady=(0, 4))
         for label, cur_field, max_field in (("HP", "hp", "hp_max"),
@@ -186,6 +195,11 @@ class CharacterPane(ttk.Frame):
         if ch is None:
             return
         keep = self.listbox.curselection()
+        party = self.app.block().party
+        self.in_party.set(self.char_id in party)
+        self.party_note.configure(
+            text=f"position {party.index(self.char_id) + 1} of {len(party)}"
+                 if self.char_id in party else "not in the party")
         for which, var in self.stat_vars.items():
             var.set(str(ch.stat(which) if which in L.STAT_OFFSETS
                         else getattr(ch, which)))
@@ -335,6 +349,39 @@ class CharacterPane(ttk.Frame):
         label = self.LABELS.get(which, which)
         if not self.app.apply(do, f"{ch.name} {label} = {val}{note}"):
             var.set(str(current))
+
+    def _commit_party(self) -> None:
+        blk = self.app.block()
+        if blk is None:
+            return
+        want = self.in_party.get()
+        current = blk.party
+        if want == (self.char_id in current):
+            return
+
+        if want:
+            order = current + [self.char_id]
+        else:
+            order = [c for c in current if c != self.char_id]
+            if not order:
+                messagebox.showerror(
+                    "Cannot do that", "The party cannot be empty.",
+                    parent=self.app.root)
+                self.in_party.set(True)
+                return
+            if not messagebox.askyesno(
+                    "Remove from party",
+                    f"Take {L.CHARACTERS[self.char_id]} out of the party?\n\n"
+                    "Story events are not editable, so a scene that expects "
+                    "them present may misbehave or leave you stuck.",
+                    parent=self.app.root):
+                self.in_party.set(True)
+                return
+
+        verb = "joined" if want else "left"
+        if not self.app.apply(lambda b: setattr(b, "party", order),
+                              f"{L.CHARACTERS[self.char_id]} {verb} the party"):
+            self.in_party.set(not want)
 
     def _commit_equip(self, slot_name: str) -> None:
         ch = self.character()

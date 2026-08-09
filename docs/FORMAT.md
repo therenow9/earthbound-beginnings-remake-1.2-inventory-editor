@@ -179,6 +179,36 @@ Offense and Defense are stored rather than derived, but the game recalculates
 both whenever equipment changes, so editing those two only lasts until the
 player next changes gear.
 
+### Stats are one byte each, and the game clamps — VERIFIED
+
+All seven stats are `u8`, so 255 is a hard ceiling imposed by the format, not
+a policy. Worth knowing that the *effective* value shares that byte with the
+base, so base + equipment can exceed it: Ninten with base Offense 250 and
+Hank's bat (+75) computes to 325. The game **clamps to 255 rather than
+wrapping** — the Equip screen reads 255, not 69 — so a maxed stat is safe.
+
+HP and PP are `u16` and could hold 65535; the editor caps them at 999 because
+the game's readouts are three digits wide.
+
+### Party membership — VERIFIED
+
+Three fields, all confirmed against the pair of real saves that bracket Teddy
+joining, then re-confirmed by forcing him into the earlier save and loading it:
+
+| where | absent | in the party |
+|---|---|---|
+| `0x7A` roster | id missing | 1-based id, in party order |
+| record `+0x0F` | `01` | `00` |
+| record `+0x38` | `FF FF` | `00 00` |
+
+An unrecruited character also sits on 0 HP while their maximum is already
+populated, so adding one by roster alone puts a corpse in the party — the
+editor revives anyone on 0 HP as it adds them.
+
+Adding works: Teddy loaded as a full fourth member, correct level and stats,
+in a save from before he joins. Story flags are untouched, so his recruitment
+scene presumably still fires later; that side of it is unexplored.
+
 ### Stat growth per level is not stored — INVESTIGATED, NOT FOUND
 
 Worth recording so nobody repeats the search. The ROM holds no per-level stat

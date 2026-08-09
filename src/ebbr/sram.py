@@ -128,6 +128,30 @@ class Block:
         raw = self.read(L.PARTY_ROSTER, 4)
         return [b - 1 for b in raw if b]
 
+    @party.setter
+    def party(self, char_ids: list[int]) -> None:
+        """Set who is in the party, in order.
+
+        The roster is only half of it — each character also carries an absent
+        flag and a join marker, and an unrecruited one sits on 0 HP, so adding
+        them by roster alone would put a corpse in the party. Verified against
+        the pair of real saves that bracket Teddy joining.
+        """
+        if not char_ids:
+            raise SaveError("the party cannot be empty")
+        if len(char_ids) > L.CHAR_COUNT:
+            raise SaveError(f"at most {L.CHAR_COUNT} characters")
+        if len(set(char_ids)) != len(char_ids):
+            raise SaveError("the same character twice")
+        for cid in char_ids:
+            if not 0 <= cid < L.CHAR_COUNT:
+                raise SaveError(f"no character {cid}")
+
+        self.write(L.PARTY_ROSTER,
+                   bytes(c + 1 for c in char_ids).ljust(L.CHAR_COUNT, b"\x00"))
+        for cid in range(L.CHAR_COUNT):
+            self.character(cid)._set_present(cid in char_ids)
+
     def name(self, char_id: int) -> str:
         off = L.NAME_TABLE + L.NAME_STRIDE * char_id
         return L.decode_text(self.read(off, L.NAME_STRIDE))
@@ -165,6 +189,26 @@ class Character:
         if not 0 <= val <= Character.STAT_MAX:
             raise SaveError(f"{what} must be 0..{Character.STAT_MAX}")
         return val
+
+    @property
+    def in_party(self) -> bool:
+        return self.char_id in self.block.party
+
+    def _set_present(self, present: bool) -> None:
+        """Bring a character into the party, or take them out of it.
+
+        Called by Block.party, which owns the roster itself. Adding revives a
+        character sitting on 0 HP — an unrecruited one always is, and the game
+        would otherwise show them dead.
+        """
+        self.block.write(self.base + L.ABSENT_FLAG,
+                         bytes([0 if present else 1]))
+        self.block.write(self.base + L.JOIN_MARKER,
+                         b"\x00\x00" if present else b"\xFF\xFF")
+        if present and self.hp == 0:
+            self.hp = self.hp_max
+            if self.pp == 0:
+                self.pp = self.pp_max
 
     @property
     def level(self) -> int:
