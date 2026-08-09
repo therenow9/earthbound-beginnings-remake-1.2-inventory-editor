@@ -198,8 +198,46 @@ Source code, a command-line version, and technical notes:
 
 Contains no ROM, patch, or game data. MIT licensed.
 
-EarthBound Beginnings Remake is a fan project by Gabbls and contributors,
-building on work begun by Clyde "Tomato" Mandelin. Thanks to
+## Future plans
+
+Honestly, not many. This does what it was built to do, and it's staying
+roughly as it is.
+
+**Not planned:**
+
+- Story flag or event editing — you will not be able to skip ahead, unlock
+  areas, or repair a stuck playthrough with this, now or later
+- PSI, melodies, map position
+- Level editing that also works out your stats for you
+
+Those first ones aren't understood well enough to touch safely, and the last
+would mean recreating the game's internal stat maths, which isn't stored
+anywhere in the ROM to copy from.
+
+**Minor bugs will get looked at.** Beyond that, please treat this as finished
+rather than something actively being developed. Feature requests probably
+won't go anywhere, and that's not rudeness — it's just the honest answer.
+
+## Not affiliated with the EBBR team
+
+**This save editor was made entirely by me (therenow9), on my own, as an
+unofficial third-party tool.**
+
+**Gabbls, livvy94, and everyone else who worked on EarthBound Beginnings
+Remake had nothing to do with it.** They did not build it, review it, endorse
+it, or ask for it. It is not part of the remake and is not supported by them.
+
+So please:
+
+- **Don't report problems with this editor to them.** Bugs belong in the issue
+  tracker linked above, not with the remake's developers.
+- **Don't blame them if it breaks your save.** That would be on me, and on
+  the fact that you were warned it might.
+- Don't treat anything here as official information about the remake.
+
+Credit where it's due, though: EarthBound Beginnings Remake is their work,
+building on what Clyde "Tomato" Mandelin started, and it's the reason this
+tool exists at all. Thanks also to
 [Oh Mother](https://github.com/clickysteve/Oh-Mother-Earthbound-Save-File-Editor)
 by clickysteve, which does a much bigger job for the original EarthBound and
 was the model for how to approach this.

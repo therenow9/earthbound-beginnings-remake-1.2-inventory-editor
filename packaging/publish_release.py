@@ -121,6 +121,31 @@ what each control does, and what to do when something goes wrong.
 Vanilla EarthBound saves are refused on purpose — the remake stores saves
 differently, and writing remake data into a vanilla save would wreck it.
 
+## Future plans
+
+Not many — this does what it was built to do and is staying roughly as it is.
+
+**Not planned:** story flag or event editing, PSI, melodies, map position, or
+level editing that recalculates your stats. The first group is not understood
+well enough to touch safely; the last would mean recreating the game's stat
+growth maths, which is not stored anywhere in the ROM to copy from.
+
+Minor bugs will get looked at. Beyond that, please treat this as finished
+rather than actively developed.
+
+## Not affiliated with the EBBR team
+
+**This editor was made entirely by me (therenow9), on my own. It is an
+unofficial third-party tool.**
+
+**Gabbls, livvy94 and everyone else behind EarthBound Beginnings Remake had no
+involvement in it** — they did not build it, review it, endorse it or ask for
+it. Please do not report problems with this editor to them, and do not blame
+them if it breaks your save.
+
+The remake itself is their work, building on what Clyde "Tomato" Mandelin
+started, and it is the reason this tool exists at all.
+
 ## Found a bug?
 
 Open an issue with what you did, what happened, and your `.srm` if you are

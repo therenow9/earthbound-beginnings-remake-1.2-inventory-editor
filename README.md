@@ -224,6 +224,29 @@ Keep ROM and VERIFIED separate rather than merging them into "known good".
 save-derived ids *only*; folding ROM-derived names into that set would make the
 check compare the ROM against itself and quietly stop catching anything.
 
+## Future plans
+
+Essentially none. This does what it was built to do.
+
+**Not planned:** story flag or event editing, PSI, melodies, map position, or
+level editing that recalculates stats. The first group is unmapped and
+guessing at it corrupts saves; the last would need the game's stat growth
+routine reproduced, and there is no table to read it from
+([docs/FORMAT.md](docs/FORMAT.md) records that search so nobody repeats it).
+
+**Minor bugs will be looked at.** Beyond that, treat this as finished rather
+than in development.
+
+## Not affiliated with the EBBR team
+
+**This editor was written entirely by me (therenow9), independently. It is an
+unofficial third-party tool.**
+
+**Gabbls, livvy94, and everyone else who worked on EarthBound Beginnings
+Remake had no involvement in it.** They did not build it, review it, endorse
+it, or ask for it. Please do not send them bug reports about this editor, and
+do not blame them if it breaks a save.
+
 ## Credits
 
 Reverse engineering by inspecting real saves. Structure and approach owe a debt
@@ -231,7 +254,7 @@ to [Oh Mother](https://github.com/clickysteve/Oh-Mother-Earthbound-Save-File-Edi
 by clickysteve, which does the same job for vanilla EarthBound.
 
 EarthBound Beginnings Remake is a fan project by Gabbls and contributors,
-building on work begun by Clyde "Tomato" Mandelin. This tool ships no ROM,
-patch, or game data.
+building on work begun by Clyde "Tomato" Mandelin — it is their work, and the
+reason this tool exists. This tool ships no ROM, patch, or game data.
 
 MIT licensed — see [LICENSE](LICENSE).
