@@ -80,7 +80,7 @@ ebbr take save.srm Ninten 6                   # ...or by bag slot
 ebbr swap save.srm Ninten 0 3                 # reorder two slots
 
 ebbr equip save.srm Teddy weapon "Silver sword"
-ebbr unequip save.srm Teddy pendant
+ebbr unequip save.srm Teddy body
 
 ebbr diff a.srm 0 0 --file-b b.srm            # field-named byte diff
 ```
@@ -89,6 +89,12 @@ Anywhere a bag slot is wanted you can give an item name instead of a number.
 Every editing command takes `-n`/`--dry-run` to show what would change without
 writing, `--save-slot` to pick a save slot other than the first, and writes a
 `.bak` beside the file unless you pass `--no-backup`.
+
+The equip slots are **weapon, body, arms, other** — the game's own names. An
+item is only accepted in the slot its ROM item-type says it belongs to, so
+`equip ... weapon Hamburger` is refused rather than written. The older names
+`pendant`, `band` and `coin` still work as aliases for `body`, `arms` and
+`other`.
 
 Bags stay contiguous the way the game keeps them: `give --slot` inserts and
 pushes the rest down rather than overwriting, `take` closes the gap, and both

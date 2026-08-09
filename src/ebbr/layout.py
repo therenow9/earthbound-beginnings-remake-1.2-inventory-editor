@@ -82,8 +82,25 @@ INVENTORY_SIZE = 14
 EQUIPMENT = 0x32
 EQUIPMENT_SIZE = 4
 #: Equip pointers are 1-based indices into the character's own inventory;
-#: 0x00 means nothing equipped. Slot order confirmed across all 4 characters.
-EQUIP_SLOTS = ("weapon", "pendant", "band", "coin")
+#: 0x00 means nothing equipped. Order confirmed across all 4 characters.
+#:
+#: These are the game's own names, read off its Equip screen. They were
+#: previously "weapon, pendant, band, coin", which was a guess made from
+#: whatever each character happened to have equipped — a pendant in slot 1, a
+#: band in slot 2, a coin in slot 3. The order was right, the names were not.
+#: Slot 3 in particular holds hats, ribbons and galoshes as well as coins,
+#: which only makes sense once it is read as "Other".
+EQUIP_SLOTS = ("weapon", "body", "arms", "other")
+
+#: What the slots used to be called, so older commands keep working.
+EQUIP_SLOT_ALIASES = {"pendant": "body", "band": "arms", "coin": "other"}
+
+
+def resolve_equip_slot(name: str) -> str | None:
+    """Canonical slot name for user input, or None if it is not a slot."""
+    name = name.lower()
+    name = EQUIP_SLOT_ALIASES.get(name, name)
+    return name if name in EQUIP_SLOTS else None
 
 CHAR_ID = 0x36
 
@@ -93,17 +110,18 @@ HP_CUR = 0x48
 PP_CUR = 0x4E
 
 #: A second copy of HP/PP that equals the current value in every real save.
-#: NOT the maxima, despite the pairing looking like it: setting these to 111
-#: left the Status screen still reporting a 542 maximum. Purpose unknown.
-#: Written in step with the current values so we never produce a pairing the
-#: game itself does not.
+#: NOT the maxima. Purpose unknown. Written in step with the current values so
+#: we never produce a pairing the game itself does not.
 HP_ALT = 0x46
 PP_ALT = 0x4C
 
-#: Maximum HP/PP are not in the character record anywhere we have found. The
-#: Status screen keeps showing the original maximum after every byte of the
-#: record we know about has been overwritten, so they are most likely derived
-#: from level and stats rather than stored.
+#: Maximum HP/PP, u16 LE. VERIFIED in-game: writing 999/888 here made the
+#: Status screen read "Hit Points: 123 / 999" and "Psychic Points: 234 / 888".
+#: Also distinguishable in real saves — in the pre-Teddy save his current HP
+#: is 0 while this field already holds 345, so the two cannot be the same
+#: field even though every *active* character is at full health.
+HP_MAX = 0x0B
+PP_MAX = 0x0D
 RECORD_TERMINATOR = 0x5D  # FF FF
 
 #: Character ids as they index the name table.

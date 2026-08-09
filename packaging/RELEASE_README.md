@@ -39,17 +39,26 @@ is written out on exit and will overwrite your changes.
 |---|---|
 | **Save slot** | any of the three, if it has a save in it |
 | **Items** | add, remove and reorder each character's 14-slot bag |
-| **Equipment** | weapon, pendant, band and coin, per character |
-| **HP / PP** | current values |
+| **Equipment** | weapon, body, arms and other, per character |
+| **HP / PP** | current and maximum |
 | **Money** | on hand |
 
 Deliberately not editable: levels, EXP, base stats, PSI and story flags. Those
 would need open-ended reverse engineering for little benefit, and guessing at
 them is how save editors corrupt files.
 
-Maximum HP and PP are not shown, because they are not stored in the save — the
-game derives them. Setting current HP above the maximum works and displays,
-but the game may clamp it back after a battle.
+### It will stop you doing impossible things
+
+**Items only go in slots they belong in.** Each equipment dropdown lists only
+what that character is carrying *that actually fits* — a hamburger is never
+offered as a weapon, and a pendant is never offered as arms. The categories
+come from the ROM's own item data, the same field the game sorts its Equip
+menu by, so the editor agrees with the game by construction.
+
+**Current HP and PP cannot exceed their maximum.** Type a bigger number and it
+snaps to the cap. To go higher, raise the maximum first — that field is
+editable too, and both are capped at 999, which is as wide as the game's
+displays go.
 
 ## Using it
 
@@ -63,9 +72,10 @@ everything below shifts up with its equipment still attached.
 
 **▲ / ▼** reorder. Equipment follows the item, not the slot number.
 
-**Equipment dropdowns** only list what that character is carrying, because the
-game stores equipment as a pointer into their own bag. Give them the item
-first, then equip it.
+**Equipment dropdowns** only list what that character is carrying *and* can
+wear in that slot, because the game stores equipment as a pointer into their
+own bag. Give them the item first, then equip it. An empty dropdown means they
+have nothing suitable.
 
 ## Is this safe?
 

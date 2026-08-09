@@ -44,6 +44,45 @@ ITEM_COUNT = 256
 #: name. The longest real name is well under this.
 NAME_MAX = 24
 
+#: Item type, one byte per record. Equippable items occupy 0x10..0x1F, four
+#: type values per equip slot, in the same order as layout.EQUIP_SLOTS:
+#:
+#:     0x10, 0x11  weapon   bats, guns
+#:     0x14        body     charms and pendants
+#:     0x18        arms     bracelets and bands
+#:     0x1C        other    hats, ribbons, coins, galoshes
+#:
+#: Everything from 0x20 up is consumable or plot goods and equips nowhere.
+#: Cross-checked against every item equipped in the two real saves: all 16
+#: land in the slot the save actually has them in.
+TYPE_OFFSET = 0x19
+EQUIP_TYPE_BASE = 0x10
+EQUIP_TYPE_END = 0x20
+TYPES_PER_SLOT = 4
+
+
+def equip_slot_for_type(type_byte: int) -> str | None:
+    """Which equip slot a raw type byte belongs to, or None if it is not gear."""
+    if not EQUIP_TYPE_BASE <= type_byte < EQUIP_TYPE_END:
+        return None
+    index = (type_byte - EQUIP_TYPE_BASE) // TYPES_PER_SLOT
+    return L.EQUIP_SLOTS[index]
+
+
+def read_types(rom: bytes, base: int = ITEM_TABLE_BASE,
+               stride: int = ITEM_ENTRY_SIZE,
+               count: int = ITEM_COUNT) -> dict[int, str]:
+    """Decode {id: equip slot}, for equippable items only."""
+    out: dict[int, str] = {}
+    for item_id in range(count):
+        at = base + item_id * stride + TYPE_OFFSET
+        if at >= len(rom):
+            break
+        slot = equip_slot_for_type(rom[at])
+        if slot:
+            out[item_id] = slot
+    return out
+
 
 def read_table(rom: bytes, base: int = ITEM_TABLE_BASE,
                stride: int = ITEM_ENTRY_SIZE,
@@ -108,13 +147,37 @@ def main(argv=None) -> int:
         print(f"vs {Path(args.compare).name}: {len(ids) - len(diff)} identical, "
               f"{len(diff)} reassigned")
 
+    types = read_types(rom, args.base, args.stride, args.count)
+    by_slot = {s: sum(1 for v in types.values() if v == s)
+               for s in L.EQUIP_SLOTS}
+    print("equippable: " + ", ".join(f"{n} {s}" for s, n in by_slot.items()))
+
+    # Independent check on the type field: everything the real saves have
+    # equipped must come out in the slot the save actually put it in.
+    bad = [f"0x{i:02X} {table.get(i, '?')} -> {types.get(i)}"
+           for i, slot in items.EQUIP_EVIDENCE.items()
+           if types.get(i) != slot]
+    if bad:
+        print("\nREFUSING TO WRITE — type field disagrees with real saves:",
+              file=sys.stderr)
+        for line in bad:
+            print(f"  {line}", file=sys.stderr)
+        return 1
+    print(f"cross-check: all {len(items.EQUIP_EVIDENCE)} save-observed "
+          f"equips land in the right slot")
+
+    entry = {}
+    for i, name in sorted(table.items()):
+        record: dict[str, str] = {"name": name}
+        if i in types:
+            record["equip"] = types[i]
+        entry[f"0x{i:02X}"] = record
+
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(
-        json.dumps({f"0x{i:02X}": n for i, n in sorted(table.items())},
-                   indent=2, ensure_ascii=False) + "\n",
-        encoding="utf-8")
-    print(f"wrote {out} ({len(table)} entries)")
+    out.write_text(json.dumps(entry, indent=2, ensure_ascii=False) + "\n",
+                   encoding="utf-8")
+    print(f"wrote {out} ({len(table)} entries, {len(types)} equippable)")
     return 0
 
 

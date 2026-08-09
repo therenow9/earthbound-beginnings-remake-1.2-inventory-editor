@@ -228,7 +228,7 @@ def test_inventory_length(save):
 def test_equipment_resolves_pointers(save):
     ch = save.populated[0].character(0)
     assert ch.equipment["weapon"] == ch.inventory[0]
-    assert ch.equipment["pendant"] is None
+    assert ch.equipment["body"] is None
 
 
 def test_equip_pointer_rejects_out_of_range(save):
@@ -340,6 +340,114 @@ def test_swap_rejects_empty_slot(save):
     ch = save.populated[0].character(0)
     with pytest.raises(SaveError, match="empty"):
         ch.swap_slots(0, L.INVENTORY_SIZE - 1)
+
+
+# --- equip slots accept only their own category ------------------------------
+#
+# The game sorts its Equip menu by the item-type field in the ROM and will not
+# offer a hamburger as a weapon, so writing one there produces a save it could
+# not have made.
+
+def test_equip_accepts_the_right_category(save):
+    ch = save.populated[0].character(0)
+    ch.add_item(0xE7, slot=1)                     # Silver sword
+    assert ch.equip("weapon", 1) == 0xE7
+    assert ch.equipment["weapon"] == 0xE7
+
+
+def test_equip_refuses_a_consumable(save):
+    ch = save.populated[0].character(0)
+    ch.add_item(0x5A, slot=1)                     # Hamburger
+    with pytest.raises(SaveError, match="not equipment"):
+        ch.equip("weapon", 1)
+
+
+def test_equip_refuses_gear_from_another_slot(save):
+    ch = save.populated[0].character(0)
+    ch.add_item(0x39, slot=1)                     # Rain pendant -> body
+    with pytest.raises(SaveError, match="goes in the body slot"):
+        ch.equip("arms", 1)
+
+
+def test_a_refused_equip_changes_nothing(save):
+    ch = save.populated[0].character(0)
+    ch.add_item(0x5A, slot=1)
+    before = ch.equip_pointers
+    with pytest.raises(SaveError):
+        ch.equip("weapon", 1)
+    assert ch.equip_pointers == before
+
+
+def test_equip_refuses_an_empty_slot(save):
+    ch = save.populated[0].character(0)
+    with pytest.raises(SaveError, match="empty"):
+        ch.equip("weapon", L.INVENTORY_SIZE - 1)
+
+
+def test_equip_rejects_an_unknown_slot_name(save):
+    ch = save.populated[0].character(0)
+    with pytest.raises(SaveError, match="not an equip slot"):
+        ch.equip("trousers", 0)
+
+
+def test_old_slot_names_still_work(save):
+    """`pendant` was this project's name for what the game calls `body`."""
+    ch = save.populated[0].character(0)
+    ch.add_item(0x39, slot=1)
+    ch.equip("pendant", 1)
+    assert ch.equipment["body"] == 0x39
+
+
+def test_unequip_clears_only_its_own_slot(save):
+    ch = save.populated[0].character(0)
+    ch.unequip("weapon")
+    assert ch.equipment["weapon"] is None
+
+
+# --- HP and PP are bounded by their maxima -----------------------------------
+
+def test_hp_above_maximum_is_refused(save):
+    ch = save.populated[0].character(0)
+    with pytest.raises(SaveError, match="above"):
+        ch.hp = ch.hp_max + 1
+
+
+def test_pp_above_maximum_is_refused(save):
+    ch = save.populated[0].character(0)
+    with pytest.raises(SaveError, match="above"):
+        ch.pp = ch.pp_max + 1
+
+
+def test_hp_at_exactly_the_maximum_is_allowed(save):
+    ch = save.populated[0].character(0)
+    ch.hp = ch.hp_max
+    assert ch.hp == ch.hp_max
+
+
+def test_lowering_max_hp_pulls_current_down_with_it(save):
+    ch = save.populated[0].character(0)
+    ch.hp_max = 10
+    assert ch.hp == 10, "current HP left stranded above the maximum"
+
+
+def test_raising_max_hp_leaves_current_alone(save):
+    ch = save.populated[0].character(0)
+    before = ch.hp
+    ch.hp_max = 900
+    assert ch.hp == before
+
+
+def test_max_hp_is_a_separate_field_from_current(save):
+    ch = save.populated[0].character(0)
+    ch.hp_max = 900
+    ch.hp = 100
+    assert (ch.hp, ch.hp_max) == (100, 900)
+
+
+def test_stats_reject_values_past_the_display_width(save):
+    ch = save.populated[0].character(0)
+    with pytest.raises(SaveError, match="0\\.\\.999"):
+        ch.hp_max = 1000
 
 
 def test_bag_stays_contiguous_through_random_edits(save):

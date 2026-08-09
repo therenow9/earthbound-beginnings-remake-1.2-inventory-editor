@@ -113,6 +113,8 @@ independently from saves.
 | `0x24` | inventory, 14 bytes, one item id per slot, `00` empty | VERIFIED |
 | `0x32` | equip pointers, 4 bytes | VERIFIED |
 | `0x36` | character id | VERIFIED |
+| `0x0B` | maximum HP, u16 LE | VERIFIED |
+| `0x0D` | maximum PP, u16 LE | VERIFIED |
 | `0x46` | second copy of HP — **not** the maximum, purpose unknown | VERIFIED |
 | `0x48` | current HP, u16 LE | VERIFIED |
 | `0x4C` | second copy of PP — **not** the maximum, purpose unknown | VERIFIED |
@@ -131,26 +133,63 @@ screen. With `0x46 = 111` and `0x48 = 777` it printed:
     Hit Points:  777 / 542
     Psychic Points:  777 / 155
 
-So `0x48` is *current* HP, and `0x4E` is current PP by the same test. The
-maxima shown (542, 155) are the character's original values, unchanged by
-writing any byte in this table — they are **not stored in the character
-record** and are most likely derived from level and stats.
+So `0x48` is *current* HP, and `0x4E` is current PP by the same test.
 
-Note the trap this is an instance of: a field pair that is equal in every
-sample carries no information about which is which. Two saves agreeing is not
-cross-validation when both are full HP.
+The maxima are at `0x0B` and `0x0D`, well away from the current values.
+Confirmed the same way — writing 999 and 888 there produced
+`Hit Points: 123 / 999` and `Psychic Points: 234 / 888`. They are also
+distinguishable in the real saves without any emulator, but only via the one
+character who is not at full health: in the pre-Teddy save Teddy's current HP
+is `0` while `0x0B` already holds `345`.
+
+Note the trap all of this is an instance of: a field pair that is equal in
+every sample carries no information about which is which. Two saves agreeing
+is not cross-validation when both are at full HP. The one row where they
+differed — an inactive party member — was worth more than the other seven
+combined.
 
 The editor writes both copies whenever HP or PP changes. `0x46`/`0x4C` have no
 observed effect, but they match the current value in every genuine save, and
 leaving one stale would create a pairing the game never produces.
 
 Equip pointers are **1-based indices into that character's own inventory**;
-`00` means nothing equipped. Slot order is **weapon, pendant, band, coin**,
-confirmed by decoding all four characters and matching the on-screen `E`
-markers.
+`00` means nothing equipped. Slot order is **weapon, body, arms, other** —
+the game's own names, read off its Equip screen.
+
+Those slots were previously called *weapon, pendant, band, coin* here. The
+order was right and the decoding was right; the names were invented from what
+the four characters happened to be wearing. Slot 3 holds hats, ribbons and
+galoshes as well as coins, which only makes sense once it is read as "Other".
 
 Bag position does not matter — the same item appears at different indices for
 different characters and equips correctly from any of them.
+
+### Which items fit which slot — VERIFIED
+
+Not in the save; in the ROM. Each item's 39-byte record carries a type byte at
+record offset `0x19`, and the equippable ones occupy `0x10..0x1F`, four type
+values per slot in the same order as the equip pointers:
+
+| type | slot | examples |
+|---|---|---|
+| `0x10`, `0x11` | weapon | bats (27), guns (12) |
+| `0x14` | body | charms and pendants (10) |
+| `0x18` | arms | bracelets and bands (14) |
+| `0x1C` | other | hats, ribbons, coins, galoshes (17) |
+
+`0x20` and up is consumables and plot goods — 173 items that equip nowhere.
+
+Established two ways. First, every one of the 9 distinct items observed
+equipped across the two real saves falls in the slot the save actually has it
+in; `tools/extract_items.py` re-checks this on every extraction and refuses to
+write the table if it ever stops holding. Second, four items that were *never*
+seen equipped — Plastic bat, Travel charm, Slap bracelet, Knit cap — were
+written into the four slots this table predicts, and the game's Equip screen
+showed each one exactly where predicted, with Offense and Defense recomputed.
+
+This is what the editor uses to refuse nonsense like a hamburger in the weapon
+slot. The game sorts its own Equip menu by this field and will never offer one,
+so writing it would produce a save the game could not have made.
 
 ### Bags are contiguous, and the game compacts them — VERIFIED
 

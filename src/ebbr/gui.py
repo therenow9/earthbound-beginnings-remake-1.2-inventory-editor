@@ -102,19 +102,23 @@ class CharacterPane(ttk.Frame):
 
         stats = ttk.Frame(self)
         stats.pack(fill="x", pady=(0, 8))
-        self.hp = tk.StringVar()
-        self.pp = tk.StringVar()
-        ttk.Label(stats, text="HP").pack(side="left")
-        hp = ttk.Entry(stats, textvariable=self.hp, width=6)
-        hp.pack(side="left", padx=(4, 12))
-        ttk.Label(stats, text="PP").pack(side="left")
-        pp = ttk.Entry(stats, textvariable=self.pp, width=6)
-        pp.pack(side="left", padx=4)
-        ttk.Label(stats, text="(max HP/PP are not stored in the save)",
-                  foreground="#777").pack(side="left", padx=12)
-        for widget, which in ((hp, "hp"), (pp, "pp")):
-            widget.bind("<FocusOut>", lambda _e, w=which: self._commit_stat(w))
-            widget.bind("<Return>", lambda _e, w=which: self._commit_stat(w))
+        self.stat_vars: dict[str, tk.StringVar] = {}
+        for label, cur_field, max_field in (("HP", "hp", "hp_max"),
+                                            ("PP", "pp", "pp_max")):
+            ttk.Label(stats, text=label).pack(side="left")
+            for which in (cur_field, max_field):
+                var = tk.StringVar()
+                self.stat_vars[which] = var
+                entry = ttk.Entry(stats, textvariable=var, width=6)
+                entry.pack(side="left", padx=(4, 0))
+                entry.bind("<FocusOut>",
+                           lambda _e, w=which: self._commit_stat(w))
+                entry.bind("<Return>", lambda _e, w=which: self._commit_stat(w))
+                if which == cur_field:
+                    ttk.Label(stats, text="/").pack(side="left", padx=2)
+            ttk.Label(stats, text="").pack(side="left", padx=8)
+        ttk.Label(stats, text="current / maximum",
+                  foreground="#777").pack(side="left", padx=4)
 
         body = ttk.Frame(self)
         body.pack(fill="both", expand=True)
@@ -156,8 +160,8 @@ class CharacterPane(ttk.Frame):
         if ch is None:
             return
         keep = self.listbox.curselection()
-        self.hp.set(str(ch.hp))
-        self.pp.set(str(ch.pp))
+        for which, var in self.stat_vars.items():
+            var.set(str(getattr(ch, which)))
 
         self.listbox.delete(0, "end")
         inv = ch.inventory
@@ -168,12 +172,14 @@ class CharacterPane(ttk.Frame):
             if inv[i] == 0:
                 self.listbox.itemconfigure(i, foreground="#999")
 
-        choices = ["(none)"] + [f"{i}: {items.name(v)}"
-                                for i, v in enumerate(inv) if v]
+        # Each dropdown offers only what actually fits that slot, so a
+        # hamburger is never presented as a weapon in the first place.
         pointers = ch.equip_pointers
         for idx, slot_name in enumerate(L.EQUIP_SLOTS):
             combo = self.equip[slot_name]
-            combo["values"] = choices
+            combo["values"] = ["(none)"] + [
+                f"{i}: {items.name(v)}" for i, v in enumerate(inv)
+                if v and items.can_equip(v, slot_name)]
             p = pointers[idx]
             if 1 <= p <= L.INVENTORY_SIZE and inv[p - 1]:
                 combo.set(f"{p - 1}: {items.name(inv[p - 1])}")
@@ -232,21 +238,34 @@ class CharacterPane(ttk.Frame):
         ch = self.character()
         if ch is None:
             return
-        var = self.hp if which == "hp" else self.pp
-        raw = var.get().strip()
-        current = ch.hp if which == "hp" else ch.pp
+        var = self.stat_vars[which]
+        current = getattr(ch, which)
         try:
-            val = int(raw)
+            val = int(var.get().strip())
         except ValueError:
             var.set(str(current))
             return
+        val = max(0, min(val, Character.STAT_MAX))
+
+        # Current HP/PP cannot exceed the maximum. Clamp here rather than
+        # letting the model reject it, so typing a big number snaps to the
+        # cap instead of throwing a dialog at the user.
+        note = ""
+        if which in ("hp", "pp"):
+            ceiling = getattr(ch, which + "_max")
+            if val > ceiling:
+                val, note = ceiling, f" (capped at {ch.name}'s maximum)"
+
         if val == current:
+            var.set(str(current))
             return
 
         def do(blk):
             setattr(blk.character(self.char_id), which, val)
 
-        if not self.app.apply(do, f"{which.upper()} = {val}"):
+        label = {"hp": "HP", "pp": "PP",
+                 "hp_max": "max HP", "pp_max": "max PP"}[which]
+        if not self.app.apply(do, f"{ch.name} {label} = {val}{note}"):
             var.set(str(current))
 
     def _commit_equip(self, slot_name: str) -> None:
@@ -254,16 +273,17 @@ class CharacterPane(ttk.Frame):
         if ch is None:
             return
         choice = self.equip[slot_name].get()
-        idx = L.EQUIP_SLOTS.index(slot_name)
-        pointer = 0 if choice == "(none)" else int(choice.split(":")[0]) + 1
 
-        def do(blk):
-            c = blk.character(self.char_id)
-            ptrs = c.equip_pointers
-            ptrs[idx] = pointer
-            c.equip_pointers = ptrs
+        if choice == "(none)":
+            self.app.apply(
+                lambda blk: blk.character(self.char_id).unequip(slot_name),
+                f"{ch.name}'s {slot_name} cleared")
+            return
 
-        self.app.apply(do, f"{slot_name} updated")
+        bag_slot = int(choice.split(":")[0])
+        self.app.apply(
+            lambda blk: blk.character(self.char_id).equip(slot_name, bag_slot),
+            f"{ch.name}'s {slot_name}: {items.name(ch.inventory[bag_slot])}")
 
 
 class EditorApp:

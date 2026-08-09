@@ -44,17 +44,21 @@ def build(seed: int = 0, slots: int = 1) -> bytes:
             rec = L.CHAR_TABLE + L.CHAR_STRIDE * cid
             hp = 200 + 50 * cid
             pp = 100 + 10 * cid
-            for fld, val in ((L.HP_CUR, hp), (L.HP_ALT, hp),
-                             (L.PP_CUR, pp), (L.PP_ALT, pp)):
+            # Current equals maximum, as it does in every real save (the game
+            # heals you when you save by calling home).
+            for fld, val in ((L.HP_CUR, hp), (L.HP_ALT, hp), (L.HP_MAX, hp),
+                             (L.PP_CUR, pp), (L.PP_ALT, pp), (L.PP_MAX, pp)):
                 data[rec + fld:rec + fld + 2] = val.to_bytes(2, "little")
             data[rec + L.CHAR_ID] = cid
 
-            # a partly-filled bag, last slot free
-            inv = [rng.choice([0x19, 0x39, 0x5A, 0x6D, 0x82, 0xCA, 0xE0, 0xE5])
-                   for _ in range(L.INVENTORY_SIZE - 1)] + [0]
+            # A partly-filled bag, last slot free. Slot 0 is always a real
+            # weapon so the equipment below is a combination the game could
+            # actually produce.
+            inv = [0x19] + [rng.choice([0x39, 0x5A, 0x6D, 0x82, 0xCA, 0xE0, 0xE5])
+                            for _ in range(L.INVENTORY_SIZE - 2)] + [0]
             data[rec + L.INVENTORY:rec + L.INVENTORY + L.INVENTORY_SIZE] = bytes(inv)
 
-            # weapon equipped from slot 1, rest empty
+            # weapon equipped from bag slot 0, rest empty
             data[rec + L.EQUIPMENT:rec + L.EQUIPMENT + L.EQUIPMENT_SIZE] = \
                 bytes([1, 0, 0, 0])
 

@@ -1,255 +1,841 @@
 {
-  "0x01": "Franklin badge",
-  "0x02": "Teddy bear",
-  "0x03": "Super plush bear",
-  "0x04": "Old bone",
-  "0x05": "Broken gadget",
-  "0x06": "Broken air gun",
-  "0x07": "Inhaler",
-  "0x08": "Broken laser",
-  "0x09": "Broken iron",
-  "0x0A": "Broken pipe",
-  "0x0B": "Broken cannon",
-  "0x0C": "Broken tube",
-  "0x0D": "Broken bazooka",
-  "0x0E": "Broken trumpet",
-  "0x0F": "Broken harmonica",
-  "0x10": "Broken antenna",
-  "0x11": "Plastic bat",
-  "0x12": "Wooden bat",
-  "0x13": "Aluminum bat",
-  "0x14": "Nail bat",
-  "0x15": "Lucky bat",
-  "0x16": "Screwball bat",
-  "0x17": "Slugger bat",
-  "0x18": "Magicant bat",
-  "0x19": "Hank's bat",
-  "0x1A": "Home-run bat",
-  "0x1B": "Knit cap",
-  "0x1C": "Fry pan",
-  "0x1D": "Non-stick pan",
-  "0x1E": "Iron skillet",
-  "0x1F": "Slap bracelet",
-  "0x20": "Thick fry pan",
-  "0x21": "Peter's pan",
-  "0x22": "Spirit bat",
-  "0x23": "Stellar cannon",
-  "0x24": "Zap gun",
-  "0x25": "Stun gun",
-  "0x26": "Air gun",
-  "0x27": "Magnum air gun",
-  "0x28": "Zip gun",
-  "0x29": "Deluxe fry pan",
-  "0x2A": "Extreme cannon",
-  "0x2B": "Mushroom soup",
-  "0x2C": "Hot chocolate",
-  "0x2D": "Galoshes",
-  "0x2E": "Toy rocket kit",
-  "0x2F": "Model rocket kit",
-  "0x30": "George's Diary",
-  "0x31": "Butterfly yo-yo",
-  "0x32": "Slingshot",
-  "0x33": "Boomerang",
-  "0x34": "Trick yo-yo",
-  "0x35": "Combat yo-yo",
-  "0x36": "Travel charm",
-  "0x37": "Great charm",
-  "0x38": "Crystal charm",
-  "0x39": "Rain pendant",
-  "0x3A": "Flame pendant",
-  "0x3B": "Earth pendant",
-  "0x3C": "Night pendant",
-  "0x3D": "Sea pendant",
-  "0x3E": "Star pendant",
-  "0x3F": "Complex kit",
-  "0x40": "Cheap bracelet",
-  "0x41": "Copper bracelet",
-  "0x42": "Silver bracelet",
-  "0x43": "Gold bracelet",
-  "0x44": "Miracle band",
-  "0x45": "Diamond band",
-  "0x46": "Removed 1",
-  "0x47": "Removed 2",
-  "0x48": "Removed 3",
-  "0x49": "Crumpled paper",
-  "0x4A": "Baseball cap",
-  "0x4B": "Girl's hat",
-  "0x4C": "Dentures",
-  "0x4D": "Ticket stub",
-  "0x4E": "Ribbon",
-  "0x4F": "Red ribbon",
-  "0x50": "Goddess ribbon",
-  "0x51": "Coin of slumber",
-  "0x52": "Coin of defense",
-  "0x53": "Onyx hook",
-  "0x54": "Last weapon",
-  "0x55": "Shiny coin",
-  "0x56": "Souvenir coin",
-  "0x57": "Double burger",
-  "0x58": "Cookie",
-  "0x59": "Bag of fries",
-  "0x5A": "Hamburger",
-  "0x5B": "Boiled egg",
-  "0x5C": "Fresh egg",
-  "0x5D": "Picnic lunch",
-  "0x5E": "Roasted corn",
-  "0x5F": "Pizza",
-  "0x60": "Chef's special",
-  "0x61": "Large pizza",
-  "0x62": "PSI caramel",
-  "0x63": "Magic truffle",
-  "0x64": "Brain food lunch",
-  "0x65": "Rock candy",
-  "0x66": "Croissant",
-  "0x67": "Bread roll",
-  "0x68": "Medium pizza",
-  "0x69": "Skip sandwich",
-  "0x6A": "Can of fruit juice",
-  "0x6B": "Peanut cheese`bar",
-  "0x6C": "Sports drink",
-  "0x6D": "Life-up cream",
-  "0x6E": "Bottle of water",
-  "0x6F": "Cold remedy",
-  "0x70": "Vial of serum",
-  "0x71": "Wisdom capsule",
-  "0x72": "Physical capsule",
-  "0x73": "Speed capsule",
-  "0x74": "Fight capsule",
-  "0x75": "Force capsule",
-  "0x76": "Ketchup packet",
-  "0x77": "Friendship ring",
-  "0x78": "Tin of Cocoa",
-  "0x79": "Ocarina",
-  "0x7A": "IC-chip",
-  "0x7B": "Jar of hot sauce",
-  "0x7C": "Salt packet",
-  "0x7D": "Sugar packet",
-  "0x7E": "Jar of delisauce",
-  "0x7F": "Wet towel",
-  "0x80": "Refreshing herb",
-  "0x81": "Magic herb",
-  "0x82": "Horn of life",
-  "0x83": "Counter-PSI unit",
-  "0x84": "Shield killer",
-  "0x85": "Bazooka",
-  "0x86": "Heavy bazooka",
-  "0x87": "HP-sucker",
-  "0x88": "Hungry HP-sucker",
-  "0x89": "Super spray",
-  "0x8A": "Slime generator",
-  "0x8B": "Flashdark",
-  "0x8C": "Ruler",
-  "0x8D": "Flea bag",
-  "0x8E": "Words of love",
-  "0x8F": "Protractor",
-  "0x90": "Bottle rocket",
-  "0x91": "Big bottle rocket",
-  "0x92": "Multi`bottle rocket",
-  "0x93": "Bomb",
-  "0x94": "Super bomb",
-  "0x95": "Insecticide spray",
-  "0x96": "Rust promoter",
-  "0x97": "Rust promoter DX",
-  "0x98": "Swear words",
-  "0x99": "Stone of Origin",
-  "0x9A": "Poison needle",
-  "0x9B": "Flamethrower",
-  "0x9C": "Real rocket",
-  "0x9D": "Defense shower",
-  "0x9E": "Letter from mom",
-  "0x9F": "Sudden fight pill",
-  "0xA0": "Bag of Dragonite",
-  "0xA1": "Defense spray",
-  "0xA2": "Piggy nose",
-  "0xA3": "For Sale sign",
-  "0xA4": "Bread loaf",
-  "0xA5": "Vial of serum",
-  "0xA6": "Banana",
-  "0xA7": "Letter from Tony",
-  "0xA8": "Canary chick",
-  "0xA9": "Chicken",
-  "0xAA": "Basement key",
-  "0xAB": "Key to the zoo",
-  "0xAC": "Bad key machine",
-  "0xAD": "Mouthwash",
-  "0xAE": "Trout yogurt",
-  "0xAF": "Bread loaf",
-  "0xB0": "Bicycle",
-  "0xB1": "ATM card",
-  "0xB2": "Old pass",
-  "0xB3": "Noble seed",
-  "0xB4": "Live Show ticket",
-  "0xB5": "Receiver phone",
-  "0xB6": "Red weed",
-  "0xB7": "Bullhorn",
-  "0xB8": "Debugger",
-  "0xB9": "Flight plan A",
-  "0xBA": "Flight plan B",
-  "0xBB": "Flight plan C",
-  "0xBC": "Calorie stick",
-  "0xBD": "Carton of cream",
-  "0xBE": "Plain roll",
-  "0xBF": "Time machine",
-  "0xC0": "Key to the manor",
-  "0xC1": "Meteorite piece",
-  "0xC2": "Secret herb",
-  "0xC3": "Neutralizer",
-  "0xC4": "Carton of milk",
-  "0xC5": "Sprig of parsley",
-  "0xC6": "Cheeseburger",
-  "0xC7": "Crisp apple",
-  "0xC8": "Juicy pear",
-  "0xC9": "PSI stone",
-  "0xCA": "Town map",
-  "0xCB": "Magic ribbon",
-  "0xCC": "Magic candy",
-  "0xCD": "Key to the locker",
-  "0xCE": "Insignificant item",
-  "0xCF": "Magic tart",
-  "0xD0": "Tiny ruby",
-  "0xD1": "Monkey's love",
-  "0xD2": "Eraser eraser",
-  "0xD3": "Tendakraut",
-  "0xD4": "T-rex's bat",
-  "0xD5": "Big league bat",
-  "0xD6": "Ultimate bat",
-  "0xD7": "Laser beam",
-  "0xD8": "Plasma beam",
-  "0xD9": "Diamond band",
-  "0xDA": "Defense ribbon",
-  "0xDB": "Talisman ribbon",
-  "0xDC": "Saturn ribbon",
-  "0xDD": "Coin of peace",
-  "0xDE": "Rope",
-  "0xDF": "Protection coin",
-  "0xE0": "Magic coin",
-  "0xE1": "Skip sandwich DX",
-  "0xE2": "Lucky sandwich",
-  "0xE3": "Pixie's bracelet",
-  "0xE4": "Cherub's band",
-  "0xE5": "Goddess band",
-  "0xE6": "Katana",
-  "0xE7": "Silver sword",
-  "0xE8": "Survival knife",
-  "0xE9": "Butter knife",
-  "0xEA": "Repel ring",
-  "0xEB": "Breadcrumbs",
-  "0xEC": "Phone card",
-  "0xED": "Big bag",
-  "0xEE": "Gang's dagger",
-  "0xEF": "Tricky shank",
-  "0xF0": "Wild mushroom",
-  "0xF1": "Wild mushroom",
-  "0xF2": "Beef jerky",
-  "0xF3": "Deluxe burger",
-  "0xF4": "Spicy jerky",
-  "0xF5": "Luxury jerky",
-  "0xF6": "Bottle of DXwater",
-  "0xF7": "Magic pudding",
-  "0xF8": "Rabbit's foot",
-  "0xF9": "Mr. Saturn coin",
-  "0xFA": "Cup of coffee",
-  "0xFB": "Popsicle",
-  "0xFC": "Cup of Lifenoodles",
-  "0xFD": "Confiscated weapon"
+  "0x01": {
+    "name": "Franklin badge"
+  },
+  "0x02": {
+    "name": "Teddy bear"
+  },
+  "0x03": {
+    "name": "Super plush bear"
+  },
+  "0x04": {
+    "name": "Old bone"
+  },
+  "0x05": {
+    "name": "Broken gadget"
+  },
+  "0x06": {
+    "name": "Broken air gun"
+  },
+  "0x07": {
+    "name": "Inhaler"
+  },
+  "0x08": {
+    "name": "Broken laser"
+  },
+  "0x09": {
+    "name": "Broken iron"
+  },
+  "0x0A": {
+    "name": "Broken pipe"
+  },
+  "0x0B": {
+    "name": "Broken cannon"
+  },
+  "0x0C": {
+    "name": "Broken tube"
+  },
+  "0x0D": {
+    "name": "Broken bazooka"
+  },
+  "0x0E": {
+    "name": "Broken trumpet"
+  },
+  "0x0F": {
+    "name": "Broken harmonica"
+  },
+  "0x10": {
+    "name": "Broken antenna"
+  },
+  "0x11": {
+    "name": "Plastic bat",
+    "equip": "weapon"
+  },
+  "0x12": {
+    "name": "Wooden bat",
+    "equip": "weapon"
+  },
+  "0x13": {
+    "name": "Aluminum bat",
+    "equip": "weapon"
+  },
+  "0x14": {
+    "name": "Nail bat",
+    "equip": "weapon"
+  },
+  "0x15": {
+    "name": "Lucky bat",
+    "equip": "weapon"
+  },
+  "0x16": {
+    "name": "Screwball bat",
+    "equip": "weapon"
+  },
+  "0x17": {
+    "name": "Slugger bat",
+    "equip": "weapon"
+  },
+  "0x18": {
+    "name": "Magicant bat",
+    "equip": "weapon"
+  },
+  "0x19": {
+    "name": "Hank's bat",
+    "equip": "weapon"
+  },
+  "0x1A": {
+    "name": "Home-run bat",
+    "equip": "weapon"
+  },
+  "0x1B": {
+    "name": "Knit cap",
+    "equip": "other"
+  },
+  "0x1C": {
+    "name": "Fry pan",
+    "equip": "weapon"
+  },
+  "0x1D": {
+    "name": "Non-stick pan",
+    "equip": "weapon"
+  },
+  "0x1E": {
+    "name": "Iron skillet",
+    "equip": "weapon"
+  },
+  "0x1F": {
+    "name": "Slap bracelet",
+    "equip": "arms"
+  },
+  "0x20": {
+    "name": "Thick fry pan",
+    "equip": "weapon"
+  },
+  "0x21": {
+    "name": "Peter's pan",
+    "equip": "weapon"
+  },
+  "0x22": {
+    "name": "Spirit bat",
+    "equip": "weapon"
+  },
+  "0x23": {
+    "name": "Stellar cannon",
+    "equip": "weapon"
+  },
+  "0x24": {
+    "name": "Zap gun",
+    "equip": "weapon"
+  },
+  "0x25": {
+    "name": "Stun gun",
+    "equip": "weapon"
+  },
+  "0x26": {
+    "name": "Air gun",
+    "equip": "weapon"
+  },
+  "0x27": {
+    "name": "Magnum air gun",
+    "equip": "weapon"
+  },
+  "0x28": {
+    "name": "Zip gun",
+    "equip": "weapon"
+  },
+  "0x29": {
+    "name": "Deluxe fry pan",
+    "equip": "weapon"
+  },
+  "0x2A": {
+    "name": "Extreme cannon",
+    "equip": "weapon"
+  },
+  "0x2B": {
+    "name": "Mushroom soup"
+  },
+  "0x2C": {
+    "name": "Hot chocolate"
+  },
+  "0x2D": {
+    "name": "Galoshes",
+    "equip": "other"
+  },
+  "0x2E": {
+    "name": "Toy rocket kit"
+  },
+  "0x2F": {
+    "name": "Model rocket kit"
+  },
+  "0x30": {
+    "name": "George's Diary"
+  },
+  "0x31": {
+    "name": "Butterfly yo-yo",
+    "equip": "weapon"
+  },
+  "0x32": {
+    "name": "Slingshot",
+    "equip": "weapon"
+  },
+  "0x33": {
+    "name": "Boomerang",
+    "equip": "weapon"
+  },
+  "0x34": {
+    "name": "Trick yo-yo",
+    "equip": "weapon"
+  },
+  "0x35": {
+    "name": "Combat yo-yo",
+    "equip": "weapon"
+  },
+  "0x36": {
+    "name": "Travel charm",
+    "equip": "body"
+  },
+  "0x37": {
+    "name": "Great charm",
+    "equip": "body"
+  },
+  "0x38": {
+    "name": "Crystal charm",
+    "equip": "body"
+  },
+  "0x39": {
+    "name": "Rain pendant",
+    "equip": "body"
+  },
+  "0x3A": {
+    "name": "Flame pendant",
+    "equip": "body"
+  },
+  "0x3B": {
+    "name": "Earth pendant",
+    "equip": "body"
+  },
+  "0x3C": {
+    "name": "Night pendant",
+    "equip": "body"
+  },
+  "0x3D": {
+    "name": "Sea pendant",
+    "equip": "body"
+  },
+  "0x3E": {
+    "name": "Star pendant",
+    "equip": "body"
+  },
+  "0x3F": {
+    "name": "Complex kit"
+  },
+  "0x40": {
+    "name": "Cheap bracelet",
+    "equip": "arms"
+  },
+  "0x41": {
+    "name": "Copper bracelet",
+    "equip": "arms"
+  },
+  "0x42": {
+    "name": "Silver bracelet",
+    "equip": "arms"
+  },
+  "0x43": {
+    "name": "Gold bracelet",
+    "equip": "arms"
+  },
+  "0x44": {
+    "name": "Miracle band",
+    "equip": "arms"
+  },
+  "0x45": {
+    "name": "Diamond band",
+    "equip": "arms"
+  },
+  "0x46": {
+    "name": "Removed 1",
+    "equip": "arms"
+  },
+  "0x47": {
+    "name": "Removed 2",
+    "equip": "arms"
+  },
+  "0x48": {
+    "name": "Removed 3",
+    "equip": "arms"
+  },
+  "0x49": {
+    "name": "Crumpled paper"
+  },
+  "0x4A": {
+    "name": "Baseball cap",
+    "equip": "other"
+  },
+  "0x4B": {
+    "name": "Girl's hat"
+  },
+  "0x4C": {
+    "name": "Dentures"
+  },
+  "0x4D": {
+    "name": "Ticket stub"
+  },
+  "0x4E": {
+    "name": "Ribbon",
+    "equip": "other"
+  },
+  "0x4F": {
+    "name": "Red ribbon",
+    "equip": "other"
+  },
+  "0x50": {
+    "name": "Goddess ribbon",
+    "equip": "other"
+  },
+  "0x51": {
+    "name": "Coin of slumber",
+    "equip": "other"
+  },
+  "0x52": {
+    "name": "Coin of defense",
+    "equip": "other"
+  },
+  "0x53": {
+    "name": "Onyx hook"
+  },
+  "0x54": {
+    "name": "Last weapon"
+  },
+  "0x55": {
+    "name": "Shiny coin",
+    "equip": "other"
+  },
+  "0x56": {
+    "name": "Souvenir coin",
+    "equip": "other"
+  },
+  "0x57": {
+    "name": "Double burger"
+  },
+  "0x58": {
+    "name": "Cookie"
+  },
+  "0x59": {
+    "name": "Bag of fries"
+  },
+  "0x5A": {
+    "name": "Hamburger"
+  },
+  "0x5B": {
+    "name": "Boiled egg"
+  },
+  "0x5C": {
+    "name": "Fresh egg"
+  },
+  "0x5D": {
+    "name": "Picnic lunch"
+  },
+  "0x5E": {
+    "name": "Roasted corn"
+  },
+  "0x5F": {
+    "name": "Pizza"
+  },
+  "0x60": {
+    "name": "Chef's special"
+  },
+  "0x61": {
+    "name": "Large pizza"
+  },
+  "0x62": {
+    "name": "PSI caramel"
+  },
+  "0x63": {
+    "name": "Magic truffle"
+  },
+  "0x64": {
+    "name": "Brain food lunch"
+  },
+  "0x65": {
+    "name": "Rock candy"
+  },
+  "0x66": {
+    "name": "Croissant"
+  },
+  "0x67": {
+    "name": "Bread roll"
+  },
+  "0x68": {
+    "name": "Medium pizza"
+  },
+  "0x69": {
+    "name": "Skip sandwich"
+  },
+  "0x6A": {
+    "name": "Can of fruit juice"
+  },
+  "0x6B": {
+    "name": "Peanut cheese`bar"
+  },
+  "0x6C": {
+    "name": "Sports drink"
+  },
+  "0x6D": {
+    "name": "Life-up cream"
+  },
+  "0x6E": {
+    "name": "Bottle of water"
+  },
+  "0x6F": {
+    "name": "Cold remedy"
+  },
+  "0x70": {
+    "name": "Vial of serum"
+  },
+  "0x71": {
+    "name": "Wisdom capsule"
+  },
+  "0x72": {
+    "name": "Physical capsule"
+  },
+  "0x73": {
+    "name": "Speed capsule"
+  },
+  "0x74": {
+    "name": "Fight capsule"
+  },
+  "0x75": {
+    "name": "Force capsule"
+  },
+  "0x76": {
+    "name": "Ketchup packet"
+  },
+  "0x77": {
+    "name": "Friendship ring"
+  },
+  "0x78": {
+    "name": "Tin of Cocoa"
+  },
+  "0x79": {
+    "name": "Ocarina"
+  },
+  "0x7A": {
+    "name": "IC-chip"
+  },
+  "0x7B": {
+    "name": "Jar of hot sauce"
+  },
+  "0x7C": {
+    "name": "Salt packet"
+  },
+  "0x7D": {
+    "name": "Sugar packet"
+  },
+  "0x7E": {
+    "name": "Jar of delisauce"
+  },
+  "0x7F": {
+    "name": "Wet towel"
+  },
+  "0x80": {
+    "name": "Refreshing herb"
+  },
+  "0x81": {
+    "name": "Magic herb"
+  },
+  "0x82": {
+    "name": "Horn of life"
+  },
+  "0x83": {
+    "name": "Counter-PSI unit"
+  },
+  "0x84": {
+    "name": "Shield killer"
+  },
+  "0x85": {
+    "name": "Bazooka"
+  },
+  "0x86": {
+    "name": "Heavy bazooka"
+  },
+  "0x87": {
+    "name": "HP-sucker"
+  },
+  "0x88": {
+    "name": "Hungry HP-sucker"
+  },
+  "0x89": {
+    "name": "Super spray"
+  },
+  "0x8A": {
+    "name": "Slime generator"
+  },
+  "0x8B": {
+    "name": "Flashdark"
+  },
+  "0x8C": {
+    "name": "Ruler"
+  },
+  "0x8D": {
+    "name": "Flea bag"
+  },
+  "0x8E": {
+    "name": "Words of love"
+  },
+  "0x8F": {
+    "name": "Protractor"
+  },
+  "0x90": {
+    "name": "Bottle rocket"
+  },
+  "0x91": {
+    "name": "Big bottle rocket"
+  },
+  "0x92": {
+    "name": "Multi`bottle rocket"
+  },
+  "0x93": {
+    "name": "Bomb"
+  },
+  "0x94": {
+    "name": "Super bomb"
+  },
+  "0x95": {
+    "name": "Insecticide spray"
+  },
+  "0x96": {
+    "name": "Rust promoter"
+  },
+  "0x97": {
+    "name": "Rust promoter DX"
+  },
+  "0x98": {
+    "name": "Swear words"
+  },
+  "0x99": {
+    "name": "Stone of Origin"
+  },
+  "0x9A": {
+    "name": "Poison needle"
+  },
+  "0x9B": {
+    "name": "Flamethrower"
+  },
+  "0x9C": {
+    "name": "Real rocket"
+  },
+  "0x9D": {
+    "name": "Defense shower"
+  },
+  "0x9E": {
+    "name": "Letter from mom"
+  },
+  "0x9F": {
+    "name": "Sudden fight pill"
+  },
+  "0xA0": {
+    "name": "Bag of Dragonite"
+  },
+  "0xA1": {
+    "name": "Defense spray"
+  },
+  "0xA2": {
+    "name": "Piggy nose"
+  },
+  "0xA3": {
+    "name": "For Sale sign"
+  },
+  "0xA4": {
+    "name": "Bread loaf"
+  },
+  "0xA5": {
+    "name": "Vial of serum"
+  },
+  "0xA6": {
+    "name": "Banana"
+  },
+  "0xA7": {
+    "name": "Letter from Tony"
+  },
+  "0xA8": {
+    "name": "Canary chick"
+  },
+  "0xA9": {
+    "name": "Chicken"
+  },
+  "0xAA": {
+    "name": "Basement key"
+  },
+  "0xAB": {
+    "name": "Key to the zoo"
+  },
+  "0xAC": {
+    "name": "Bad key machine"
+  },
+  "0xAD": {
+    "name": "Mouthwash"
+  },
+  "0xAE": {
+    "name": "Trout yogurt"
+  },
+  "0xAF": {
+    "name": "Bread loaf"
+  },
+  "0xB0": {
+    "name": "Bicycle"
+  },
+  "0xB1": {
+    "name": "ATM card"
+  },
+  "0xB2": {
+    "name": "Old pass"
+  },
+  "0xB3": {
+    "name": "Noble seed"
+  },
+  "0xB4": {
+    "name": "Live Show ticket"
+  },
+  "0xB5": {
+    "name": "Receiver phone"
+  },
+  "0xB6": {
+    "name": "Red weed"
+  },
+  "0xB7": {
+    "name": "Bullhorn"
+  },
+  "0xB8": {
+    "name": "Debugger"
+  },
+  "0xB9": {
+    "name": "Flight plan A"
+  },
+  "0xBA": {
+    "name": "Flight plan B"
+  },
+  "0xBB": {
+    "name": "Flight plan C"
+  },
+  "0xBC": {
+    "name": "Calorie stick"
+  },
+  "0xBD": {
+    "name": "Carton of cream"
+  },
+  "0xBE": {
+    "name": "Plain roll"
+  },
+  "0xBF": {
+    "name": "Time machine"
+  },
+  "0xC0": {
+    "name": "Key to the manor"
+  },
+  "0xC1": {
+    "name": "Meteorite piece"
+  },
+  "0xC2": {
+    "name": "Secret herb"
+  },
+  "0xC3": {
+    "name": "Neutralizer"
+  },
+  "0xC4": {
+    "name": "Carton of milk"
+  },
+  "0xC5": {
+    "name": "Sprig of parsley"
+  },
+  "0xC6": {
+    "name": "Cheeseburger"
+  },
+  "0xC7": {
+    "name": "Crisp apple"
+  },
+  "0xC8": {
+    "name": "Juicy pear"
+  },
+  "0xC9": {
+    "name": "PSI stone"
+  },
+  "0xCA": {
+    "name": "Town map"
+  },
+  "0xCB": {
+    "name": "Magic ribbon"
+  },
+  "0xCC": {
+    "name": "Magic candy"
+  },
+  "0xCD": {
+    "name": "Key to the locker"
+  },
+  "0xCE": {
+    "name": "Insignificant item"
+  },
+  "0xCF": {
+    "name": "Magic tart"
+  },
+  "0xD0": {
+    "name": "Tiny ruby"
+  },
+  "0xD1": {
+    "name": "Monkey's love"
+  },
+  "0xD2": {
+    "name": "Eraser eraser"
+  },
+  "0xD3": {
+    "name": "Tendakraut"
+  },
+  "0xD4": {
+    "name": "T-rex's bat",
+    "equip": "weapon"
+  },
+  "0xD5": {
+    "name": "Big league bat",
+    "equip": "weapon"
+  },
+  "0xD6": {
+    "name": "Ultimate bat",
+    "equip": "weapon"
+  },
+  "0xD7": {
+    "name": "Laser beam"
+  },
+  "0xD8": {
+    "name": "Plasma beam"
+  },
+  "0xD9": {
+    "name": "Diamond band",
+    "equip": "arms"
+  },
+  "0xDA": {
+    "name": "Defense ribbon",
+    "equip": "other"
+  },
+  "0xDB": {
+    "name": "Talisman ribbon",
+    "equip": "other"
+  },
+  "0xDC": {
+    "name": "Saturn ribbon",
+    "equip": "other"
+  },
+  "0xDD": {
+    "name": "Coin of peace",
+    "equip": "other"
+  },
+  "0xDE": {
+    "name": "Rope"
+  },
+  "0xDF": {
+    "name": "Protection coin",
+    "equip": "other"
+  },
+  "0xE0": {
+    "name": "Magic coin",
+    "equip": "other"
+  },
+  "0xE1": {
+    "name": "Skip sandwich DX"
+  },
+  "0xE2": {
+    "name": "Lucky sandwich"
+  },
+  "0xE3": {
+    "name": "Pixie's bracelet",
+    "equip": "arms"
+  },
+  "0xE4": {
+    "name": "Cherub's band",
+    "equip": "arms"
+  },
+  "0xE5": {
+    "name": "Goddess band",
+    "equip": "arms"
+  },
+  "0xE6": {
+    "name": "Katana",
+    "equip": "weapon"
+  },
+  "0xE7": {
+    "name": "Silver sword",
+    "equip": "weapon"
+  },
+  "0xE8": {
+    "name": "Survival knife",
+    "equip": "weapon"
+  },
+  "0xE9": {
+    "name": "Butter knife",
+    "equip": "weapon"
+  },
+  "0xEA": {
+    "name": "Repel ring"
+  },
+  "0xEB": {
+    "name": "Breadcrumbs"
+  },
+  "0xEC": {
+    "name": "Phone card"
+  },
+  "0xED": {
+    "name": "Big bag"
+  },
+  "0xEE": {
+    "name": "Gang's dagger",
+    "equip": "weapon"
+  },
+  "0xEF": {
+    "name": "Tricky shank",
+    "equip": "weapon"
+  },
+  "0xF0": {
+    "name": "Wild mushroom"
+  },
+  "0xF1": {
+    "name": "Wild mushroom"
+  },
+  "0xF2": {
+    "name": "Beef jerky"
+  },
+  "0xF3": {
+    "name": "Deluxe burger"
+  },
+  "0xF4": {
+    "name": "Spicy jerky"
+  },
+  "0xF5": {
+    "name": "Luxury jerky"
+  },
+  "0xF6": {
+    "name": "Bottle of DXwater"
+  },
+  "0xF7": {
+    "name": "Magic pudding"
+  },
+  "0xF8": {
+    "name": "Rabbit's foot",
+    "equip": "body"
+  },
+  "0xF9": {
+    "name": "Mr. Saturn coin",
+    "equip": "other"
+  },
+  "0xFA": {
+    "name": "Cup of coffee"
+  },
+  "0xFB": {
+    "name": "Popsicle"
+  },
+  "0xFC": {
+    "name": "Cup of Lifenoodles"
+  },
+  "0xFD": {
+    "name": "Confiscated weapon",
+    "equip": "weapon"
+  }
 }

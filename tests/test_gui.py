@@ -17,7 +17,7 @@ tk = pytest.importorskip("tkinter")
 
 from ebbr import items, layout as L                       # noqa: E402
 from ebbr.gui import EditorApp, ItemPicker                # noqa: E402
-from ebbr.sram import SaveFile                            # noqa: E402
+from ebbr.sram import Character, SaveError, SaveFile      # noqa: E402
 
 from tools.make_fixture import build                      # noqa: E402
 
@@ -31,6 +31,27 @@ def root():
     r.withdraw()
     yield r
     r.destroy()
+
+
+@pytest.fixture(autouse=True)
+def _no_modal_dialogs(monkeypatch):
+    """Never let a test block on a message box.
+
+    The GUI reports refusals through messagebox, which is modal — one
+    unexpected error dialog and the whole suite hangs with no output. Record
+    the calls instead so tests can assert on them.
+    """
+    seen: list[tuple[str, str]] = []
+    for fn in ("showerror", "showinfo", "showwarning"):
+        monkeypatch.setattr(f"ebbr.gui.messagebox.{fn}",
+                            lambda title, msg, _s=seen, **k: _s.append((title, msg)))
+    monkeypatch.setattr("ebbr.gui.messagebox.askyesno", lambda *a, **k: True)
+    return seen
+
+
+@pytest.fixture
+def dialogs(_no_modal_dialogs):
+    return _no_modal_dialogs
 
 
 @pytest.fixture
@@ -160,7 +181,9 @@ def test_money_field_rejects_junk_without_touching_the_save(app):
 
 def test_hp_field_commits_to_both_copies(app):
     pane = app.panes[0]
-    pane.hp.set("321")
+    pane.stat_vars["hp_max"].set("400")
+    pane._commit_stat("hp_max")
+    pane.stat_vars["hp"].set("321")
     pane._commit_stat("hp")
     ch = app.block().character(0)
     assert ch.hp == 321
@@ -168,31 +191,132 @@ def test_hp_field_commits_to_both_copies(app):
     assert ch.block.u16(ch.base + L.HP_ALT) == 321
 
 
-def test_out_of_range_stat_is_refused_and_reverted(app, monkeypatch):
-    monkeypatch.setattr("ebbr.gui.messagebox.showerror", lambda *a, **k: None)
+def test_junk_in_a_stat_field_is_reverted(app):
     pane = app.panes[0]
     before = app.block().character(0).hp
-    pane.hp.set("99999")
+    pane.stat_vars["hp"].set("not a number")
     pane._commit_stat("hp")
     assert app.block().character(0).hp == before
-    assert pane.hp.get() == str(before)
+    assert pane.stat_vars["hp"].get() == str(before)
 
 
 def test_equipment_dropdown_sets_the_pointer(app):
+    """Put a second weapon in the bag, then equip it from the dropdown."""
     pane = app.panes[0]
-    inv = app.block().character(0).inventory
-    pane.equip["weapon"].set(f"1: {items.name(inv[1])}")
+    app.apply(lambda blk: blk.character(0).add_item(0xE7, slot=1),
+              "add Silver sword")
+    pane.equip["weapon"].set(f"1: {items.name(0xE7)}")
     pane._commit_equip("weapon")
-    assert app.block().character(0).equip_pointers[0] == 2
+    ch = app.block().character(0)
+    assert ch.equip_pointers[0] == 2
+    assert ch.equipment["weapon"] == 0xE7
 
 
 def test_equipment_dropdown_can_clear(app):
     pane = app.panes[0]
-    app.apply(lambda blk: setattr(blk.character(0), "equip_pointers",
-                                  [1, 0, 0, 0]), "equip")
     pane.equip["weapon"].set("(none)")
     pane._commit_equip("weapon")
     assert app.block().character(0).equip_pointers[0] == 0
+
+
+# --- equip slots only accept what belongs in them ---------------------------
+
+def test_dropdown_only_offers_items_that_fit_the_slot(app):
+    """A hamburger must never even appear in the weapon list."""
+    pane = app.panes[0]
+    app.apply(lambda blk: blk.character(0).add_item(0x5A, slot=1),
+              "add Hamburger")
+    pane.refresh()
+
+    offered = list(pane.equip["weapon"]["values"])
+    assert "(none)" in offered
+    assert not any("Hamburger" in o for o in offered)
+    for entry in offered[1:]:
+        slot_index = int(entry.split(":")[0])
+        item_id = app.block().character(0).inventory[slot_index]
+        assert items.equip_slot(item_id) == "weapon"
+
+
+def test_every_dropdown_offers_only_its_own_category(app):
+    pane = app.panes[0]
+    pane.refresh()
+    for slot_name in L.EQUIP_SLOTS:
+        for entry in list(pane.equip[slot_name]["values"])[1:]:
+            item_id = app.block().character(0).inventory[int(entry.split(":")[0])]
+            assert items.equip_slot(item_id) == slot_name
+
+
+def test_model_refuses_a_consumable_in_the_weapon_slot(app, dialogs):
+    """Belt and braces: even if the widget were bypassed, the model says no."""
+    ch = app.block().character(0)
+    app.apply(lambda blk: blk.character(0).add_item(0x5A, slot=1), "add food")
+
+    with pytest.raises(SaveError, match="cannot go in the weapon slot"):
+        app.block().character(0).equip("weapon", 1)
+
+
+def test_model_refuses_gear_in_the_wrong_gear_slot(app):
+    """Rain pendant is body gear; it is still not a weapon."""
+    app.apply(lambda blk: blk.character(0).add_item(0x39, slot=1),
+              "add Rain pendant")
+    with pytest.raises(SaveError, match="goes in the body slot"):
+        app.block().character(0).equip("weapon", 1)
+
+
+def test_wrong_slot_equip_leaves_the_save_untouched(app, dialogs):
+    app.apply(lambda blk: blk.character(0).add_item(0x5A, slot=1), "add food")
+    before = app.block().character(0).equip_pointers
+
+    def do(blk):
+        blk.character(0).equip("weapon", 1)
+
+    assert app.apply(do, "should fail") is False
+    assert app.block().character(0).equip_pointers == before
+    assert dialogs, "the refusal should have been reported to the user"
+
+
+# --- HP and PP are capped ----------------------------------------------------
+
+def test_current_hp_is_capped_at_the_maximum(app):
+    pane = app.panes[0]
+    ceiling = app.block().character(0).hp_max
+    pane.stat_vars["hp"].set(str(ceiling + 500))
+    pane._commit_stat("hp")
+    assert app.block().character(0).hp == ceiling
+
+
+def test_current_pp_is_capped_at_the_maximum(app):
+    pane = app.panes[0]
+    ceiling = app.block().character(0).pp_max
+    pane.stat_vars["pp"].set(str(ceiling + 500))
+    pane._commit_stat("pp")
+    assert app.block().character(0).pp == ceiling
+
+
+def test_raising_the_maximum_then_current_works(app):
+    pane = app.panes[0]
+    pane.stat_vars["hp_max"].set("900")
+    pane._commit_stat("hp_max")
+    pane.stat_vars["hp"].set("850")
+    pane._commit_stat("hp")
+    ch = app.block().character(0)
+    assert (ch.hp_max, ch.hp) == (900, 850)
+
+
+def test_lowering_the_maximum_drags_current_down(app):
+    pane = app.panes[0]
+    pane.stat_vars["hp_max"].set("50")
+    pane._commit_stat("hp_max")
+    ch = app.block().character(0)
+    assert ch.hp_max == 50
+    assert ch.hp == 50, "current HP left above the new maximum"
+
+
+def test_stats_are_clamped_to_the_display_width(app):
+    pane = app.panes[0]
+    pane.stat_vars["hp_max"].set("99999")
+    pane._commit_stat("hp_max")
+    assert app.block().character(0).hp_max == Character.STAT_MAX
 
 
 def test_saving_writes_a_backup_and_a_loadable_file(app, savefile):

@@ -42,7 +42,8 @@ def cmd_info(args) -> int:
         print(f"  party: {', '.join(blk.name(c) for c in blk.party)}")
         for cid in range(L.CHAR_COUNT):
             ch = blk.character(cid)
-            print(f"\n  {ch.name}  HP {ch.hp}  PP {ch.pp}")
+            print(f"\n  {ch.name}  HP {ch.hp}/{ch.hp_max}  "
+                  f"PP {ch.pp}/{ch.pp_max}")
             for i, iid in enumerate(ch.inventory):
                 if iid:
                     print(f"     {i:2d}  0x{iid:02X}  {items.name(iid)}")
@@ -180,20 +181,15 @@ def cmd_unequip(args) -> int:
     path = Path(args.file)
     s = _load_editable(path)
     cid = _resolve_char(args.character)
-    if args.slot_name not in L.EQUIP_SLOTS:
+    slot_name = L.resolve_equip_slot(args.slot_name)
+    if slot_name is None:
         print(f"slot must be one of {', '.join(L.EQUIP_SLOTS)}", file=sys.stderr)
         return 1
-    idx = L.EQUIP_SLOTS.index(args.slot_name)
 
-    def edit(blk):
-        ch = blk.character(cid)
-        ptrs = ch.equip_pointers
-        ptrs[idx] = 0
-        ch.equip_pointers = ptrs
-
-    s.edit_slot(args.save_slot, edit)
+    s.edit_slot(args.save_slot,
+                lambda blk: blk.character(cid).unequip(slot_name))
     _write(s, path, args)
-    print(f"unequipped {L.CHARACTERS[cid]}'s {args.slot_name}")
+    print(f"unequipped {L.CHARACTERS[cid]}'s {slot_name}")
     return 0
 
 
@@ -201,27 +197,21 @@ def cmd_equip(args) -> int:
     path = Path(args.file)
     s = _load_editable(path)
     cid = _resolve_char(args.character)
-    if args.slot_name not in L.EQUIP_SLOTS:
+    slot_name = L.resolve_equip_slot(args.slot_name)
+    if slot_name is None:
         print(f"slot must be one of {', '.join(L.EQUIP_SLOTS)}", file=sys.stderr)
         return 1
-    idx = L.EQUIP_SLOTS.index(args.slot_name)
     used = {}
 
     def edit(blk):
         ch = blk.character(cid)
-        slot = _resolve_bag_slot(ch, args.bag_slot)
-        inv = ch.inventory
-        if not (0 <= slot < L.INVENTORY_SIZE) or inv[slot] == 0:
-            raise SaveError(f"bag slot {slot} is empty")
-        ptrs = ch.equip_pointers
-        ptrs[idx] = slot + 1
-        ch.equip_pointers = ptrs
-        used["slot"] = slot
-        used["id"] = inv[slot]
+        bag_slot = _resolve_bag_slot(ch, args.bag_slot)
+        used["id"] = ch.equip(slot_name, bag_slot)
+        used["slot"] = bag_slot
 
     s.edit_slot(args.save_slot, edit)
     _write(s, path, args)
-    print(f"equipped {L.CHARACTERS[cid]}'s {args.slot_name}: "
+    print(f"equipped {L.CHARACTERS[cid]}'s {slot_name}: "
           f"{items.name(used['id'])} from bag slot {used['slot']}")
     return 0
 

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from . import layout as L
+from . import items, layout as L
 
 
 class SaveError(Exception):
@@ -173,10 +173,27 @@ class Character:
     @hp.setter
     def hp(self, val: int) -> None:
         val = self._check_stat("HP", val)
+        if val > self.hp_max:
+            raise SaveError(
+                f"HP {val} is above {self.name}'s maximum of {self.hp_max}; "
+                f"raise max HP first")
         # Both copies, always. They are equal in every real save; leaving the
         # second one stale would create a pairing the game never writes.
         self.block.set_u16(self.base + L.HP_CUR, val)
         self.block.set_u16(self.base + L.HP_ALT, val)
+
+    @property
+    def hp_max(self) -> int:
+        return self.block.u16(self.base + L.HP_MAX)
+
+    @hp_max.setter
+    def hp_max(self, val: int) -> None:
+        val = self._check_stat("max HP", val)
+        self.block.set_u16(self.base + L.HP_MAX, val)
+        # Current can never exceed the new maximum.
+        if self.hp > val:
+            self.block.set_u16(self.base + L.HP_CUR, val)
+            self.block.set_u16(self.base + L.HP_ALT, val)
 
     @property
     def pp(self) -> int:
@@ -185,8 +202,24 @@ class Character:
     @pp.setter
     def pp(self, val: int) -> None:
         val = self._check_stat("PP", val)
+        if val > self.pp_max:
+            raise SaveError(
+                f"PP {val} is above {self.name}'s maximum of {self.pp_max}; "
+                f"raise max PP first")
         self.block.set_u16(self.base + L.PP_CUR, val)
         self.block.set_u16(self.base + L.PP_ALT, val)
+
+    @property
+    def pp_max(self) -> int:
+        return self.block.u16(self.base + L.PP_MAX)
+
+    @pp_max.setter
+    def pp_max(self, val: int) -> None:
+        val = self._check_stat("max PP", val)
+        self.block.set_u16(self.base + L.PP_MAX, val)
+        if self.pp > val:
+            self.block.set_u16(self.base + L.PP_CUR, val)
+            self.block.set_u16(self.base + L.PP_ALT, val)
 
     @property
     def inventory(self) -> list[int]:
@@ -317,6 +350,55 @@ class Character:
             if v == item_id:
                 return i
         return None
+
+    # --- equipment -----------------------------------------------------------
+    #
+    # Validation lives here rather than on the equip_pointers setter, which
+    # has to stay permissive: the bag-shift logic rewrites pointers wholesale
+    # and must not be second-guessed about item types while doing it.
+
+    def equip(self, slot: str, bag_slot: int) -> int:
+        """Equip whatever is in `bag_slot` into the named slot.
+
+        Refuses items that do not belong there — the game sorts its own Equip
+        menu by item type and will not offer a hamburger as a weapon, so
+        writing one into the weapon slot produces a save it could not have
+        made. Returns the item id equipped.
+        """
+        canonical = L.resolve_equip_slot(slot)
+        if canonical is None:
+            raise SaveError(
+                f"{slot!r} is not an equip slot; expected one of "
+                f"{', '.join(L.EQUIP_SLOTS)}")
+        if not 0 <= bag_slot < L.INVENTORY_SIZE:
+            raise SaveError(f"bag slot {bag_slot} out of range")
+
+        item_id = self.inventory[bag_slot]
+        if item_id == 0:
+            raise SaveError(f"bag slot {bag_slot} is empty")
+
+        actual = items.equip_slot(item_id)
+        if actual != canonical:
+            name = items.name(item_id)
+            where = (f"it goes in the {actual} slot" if actual
+                     else "it is not equipment")
+            raise SaveError(
+                f"{name} cannot go in the {canonical} slot — {where}")
+
+        ptrs = self.equip_pointers
+        ptrs[L.EQUIP_SLOTS.index(canonical)] = bag_slot + 1
+        self.equip_pointers = ptrs
+        return item_id
+
+    def unequip(self, slot: str) -> None:
+        canonical = L.resolve_equip_slot(slot)
+        if canonical is None:
+            raise SaveError(
+                f"{slot!r} is not an equip slot; expected one of "
+                f"{', '.join(L.EQUIP_SLOTS)}")
+        ptrs = self.equip_pointers
+        ptrs[L.EQUIP_SLOTS.index(canonical)] = 0
+        self.equip_pointers = ptrs
 
     def __repr__(self) -> str:
         return f"<Character {self.name} HP {self.hp} PP {self.pp}>"

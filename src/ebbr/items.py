@@ -101,11 +101,31 @@ def find(query: str) -> list[tuple[int, str]]:
     return [(i, n) for i, (n, _) in sorted(ITEMS.items()) if q in n.lower()]
 
 
+#: id -> equip slot name, for equippable items only. Populated from the ROM's
+#: own item-type field; absent means the item equips nowhere.
+EQUIP_SLOT: dict[int, str] = {}
+
+#: Every item observed equipped in a real save, and the slot it was in. This
+#: is what `tools/extract_items.py` checks the ROM type field against — an
+#: independent handle on the mapping, from save data rather than the ROM.
+EQUIP_EVIDENCE: dict[int, str] = {
+    0x19: "weapon",   # Hank's bat      - Ninten
+    0x1E: "weapon",   # Ana's weapon    - Ana
+    0x28: "weapon",   # Lloyd's weapon  - Lloyd
+    0xE6: "weapon",   # Katana          - Teddy
+    0x39: "body",     # Rain pendant    - Ninten
+    0x3A: "body",     # Flame pendant   - Ana, Teddy
+    0x3B: "body",     # Lloyd's pendant - Lloyd
+    0xE5: "arms",     # Goddess band    - all four
+    0xE0: "other",    # Magic coin      - all four
+}
+
+
 def _merge(raw: dict, default_provenance: str = ROM) -> int:
     """Merge a decoded table into ITEMS, overriding the built-ins.
 
-    Accepts  {id: name}  or  {id: {name: ..., provenance: ...}}, with ids as
-    ints or as strings in any base ("0xE5", "229").
+    Accepts  {id: name}  or  {id: {name: ..., equip: ..., provenance: ...}},
+    with ids as ints or as strings in any base ("0xE5", "229").
     Returns the number of entries merged.
     """
     count = 0
@@ -113,10 +133,37 @@ def _merge(raw: dict, default_provenance: str = ROM) -> int:
         item_id = int(key, 0) if isinstance(key, str) else int(key)
         if isinstance(val, dict):
             ITEMS[item_id] = (val["name"], val.get("provenance", default_provenance))
+            slot = val.get("equip")
+            if slot:
+                EQUIP_SLOT[item_id] = slot
+            else:
+                EQUIP_SLOT.pop(item_id, None)
         else:
             ITEMS[item_id] = (str(val), default_provenance)
         count += 1
     return count
+
+
+def equip_slot(item_id: int) -> str | None:
+    """Which equip slot this item goes in, or None if it is not equipment.
+
+    Falls back to what real saves showed when no table has been loaded, so
+    the check still works against the built-ins.
+    """
+    if EQUIP_SLOT:
+        return EQUIP_SLOT.get(item_id)
+    return EQUIP_EVIDENCE.get(item_id)
+
+
+def can_equip(item_id: int, slot: str) -> bool:
+    return item_id != 0 and equip_slot(item_id) == slot
+
+
+def equippable(slot: str) -> list[tuple[int, str]]:
+    """(id, name) of everything that fits `slot`, sorted by name."""
+    source = EQUIP_SLOT or EQUIP_EVIDENCE
+    return sorted(((i, name(i)) for i, s in source.items() if s == slot),
+                  key=lambda pair: pair[1].lower())
 
 
 def load_json(path: str | Path) -> int:
