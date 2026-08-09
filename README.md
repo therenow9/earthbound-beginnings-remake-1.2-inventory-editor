@@ -200,9 +200,15 @@ is a bug: a vanilla EarthBound save being refused, a blank SRAM from a
 ROM/filename mismatch, and an edit "not working" because the emulator was still
 open and overwrote the file on exit.
 
-Worth including: what you did, what happened versus what you expected, the
-editor and EBBR versions, and your `.srm` if you are willing — nearly every
-report is reproducible in seconds with the file and guesswork without it.
+Worth including: what you did, what happened versus what you expected, and the
+editor and EBBR versions.
+
+**Save files matter most, and a pair beats a single file.** Send the save from
+before the problem and the one from after: one save shows the end state, two
+show exactly which bytes changed, which is usually the whole answer. Reporters
+already have the "before" — it is the `.bak` the editor writes beside the save
+on every write. This is the same controlled-diff method that produced most of
+`docs/FORMAT.md`.
 
 **Never attach a ROM or a patch.** This project ships no game data and cannot
 accept any. A save file alone is fine.

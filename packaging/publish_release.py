@@ -152,8 +152,18 @@ inside it — I genuinely appreciate all the work that has gone into it.
 
 ## Found a bug?
 
-Open an issue with what you did, what happened, and your `.srm` if you are
-willing to share it — that makes almost anything reproducible in seconds.
+Open an issue with what you did and what happened.
+
+**Save files help more than anything else — and two are far better than one.**
+Send the save from *before* the problem and the one from *after*. A single
+save shows the end state; a pair shows exactly which bytes changed, which is
+usually the entire answer.
+
+You probably already have the "before" file: the editor writes a backup beside
+your save every time it saves, ending in `.bak` (or `.bak1`, `.bak2`...). That
+is your save as it was before that edit. So attach the `.bak` as *before* and
+the `.srm` as *after*.
+
 Please do not attach a ROM or patch; this project ships no game data and
 cannot accept any.
 

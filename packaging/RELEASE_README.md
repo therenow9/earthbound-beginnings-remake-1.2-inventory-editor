@@ -178,9 +178,27 @@ It helps a lot if you include:
 
 - **What you did**, step by step
 - **What happened**, and what you expected instead
-- **Your `.srm` file**, if you don't mind sharing it — this makes almost any
-  problem easy to reproduce
 - **Which version** of the editor (Help → About) and of the remake
+
+### Save files help more than anything else
+
+If you don't mind sharing them, **send the save from before the problem and
+the save from after** — both files, not just one.
+
+A single save shows the end state. A pair shows exactly which bytes changed,
+which is usually the whole answer in about a minute. This is genuinely the
+difference between a bug that gets fixed and one that gets guessed at.
+
+**The good news is you probably already have the "before" file.** Every time
+the editor saves, it writes a backup next to your save with `.bak` on the end —
+`EBBR.srm.bak`, or `.bak1`, `.bak2` and so on if there are several. That
+backup is your save as it was *before* that edit. So:
+
+- **before** → the `.bak` file (or your own backup copy)
+- **after** → the `.srm` itself
+
+Attach both. If the problem showed up in the game rather than in the editor,
+the most useful "after" is a save made *in game* once things had gone wrong.
 
 Copy in the exact error message if you saw one.
 
