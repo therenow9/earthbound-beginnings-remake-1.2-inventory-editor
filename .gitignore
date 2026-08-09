@@ -1,0 +1,24 @@
+# Never commit game data or personal saves
+*.srm
+*.sav
+*.srm.bak*
+*.sfc
+*.smc
+*.fig
+*.ips
+*.bps
+*.ups
+roms/
+saves/
+coilsnake_project/
+
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.coverage
+dist/
+build/
+.DS_Store
