@@ -143,11 +143,17 @@ def cmd_equip(args) -> int:
 
 
 def cmd_items(args) -> int:
+    #: Only call out what the user should be careful with. ROM-derived names
+    #: are the common case now, so flagging them would be noise.
+    flags = {items.INFERRED: "   (inferred)"}
+    n = 0
     for iid, (nm, prov) in sorted(items.ITEMS.items()):
         if args.query and args.query.lower() not in nm.lower():
             continue
-        flag = "" if prov == items.VERIFIED else "   (inferred)"
-        print(f"  0x{iid:02X}  {nm}{flag}")
+        print(f"  0x{iid:02X}  {nm}{flags.get(prov, '')}")
+        n += 1
+    if args.query and not n:
+        print(f"  no item matching {args.query!r}")
     return 0
 
 
@@ -166,11 +172,22 @@ def _resolve_item(token: str) -> int:
     except ValueError:
         pass
     hits = items.find(token)
-    if len(hits) == 1:
-        return hits[0][0]
     if not hits:
         raise SystemExit(f"unknown item {token!r} (try `ebbr items`)")
-    raise SystemExit("ambiguous: " + ", ".join(n for _, n in hits))
+    if len(hits) == 1:
+        return hits[0][0]
+
+    # With the full 253-entry table loaded, substring matches collide
+    # constantly ("bomb" hits several bats and bombs). An exact name is
+    # unambiguous by definition, so let it win over its own superstrings.
+    exact = [(i, n) for i, n in hits if n.lower() == token.lower()]
+    if len(exact) == 1:
+        return exact[0][0]
+
+    shown = ", ".join(f"{n} (0x{i:02X})" for i, n in hits[:8])
+    more = f", and {len(hits) - 8} more" if len(hits) > 8 else ""
+    raise SystemExit(f"ambiguous: {shown}{more}\n"
+                     f"give the exact name or the id")
 
 
 def main(argv=None) -> int:
@@ -212,6 +229,7 @@ def main(argv=None) -> int:
     pt.set_defaults(func=cmd_items)
 
     args = p.parse_args(argv)
+    items.load_default()   # data/items.json if present; harmless if not
     try:
         return args.func(args)
     except SaveError as e:

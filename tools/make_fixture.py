@@ -73,6 +73,41 @@ def build(seed: int = 0, slots: int = 1) -> bytes:
     return bytes(buf)
 
 
+def build_vanilla(seed: int = 0, slots: int = 1) -> bytes:
+    """A structurally valid *stock EarthBound* SRAM image.
+
+    Only the container matters here. The tool never decodes vanilla fields — it
+    only has to recognise the layout and refuse the file — so the data section
+    is filled with arbitrary non-zero bytes rather than meaningful records.
+    (EBBR's field offsets do not even fit: NAME_TABLE at 0x513 lies past the
+    0x4E0-byte vanilla data section.)
+
+    Exists because no fixture ever exercised L.VANILLA, which is how its
+    geometry stayed wrong through a fully passing suite.
+    """
+    rng = random.Random(seed)
+    buf = bytearray(SRAM_SIZE)
+    lay = L.VANILLA
+
+    for i in range(6):
+        base = i * lay.block_stride
+        if base + len(L.SIGNATURE) <= SRAM_SIZE:
+            buf[base:base + len(L.SIGNATURE)] = L.SIGNATURE
+
+    for slot in range(slots):
+        data = bytes(rng.randrange(1, 256) for _ in range(lay.data_len))
+        for mirror in range(2):
+            base = (slot * 2 + mirror) * lay.block_stride
+            start = base + lay.data_offset
+            buf[start:start + lay.data_len] = data
+            buf[base + lay.ck_sum_at:base + lay.ck_sum_at + 2] = \
+                sum16(data).to_bytes(2, "little")
+            buf[base + lay.ck_xor_at:base + lay.ck_xor_at + 2] = \
+                xor16(data).to_bytes(2, "little")
+
+    return bytes(buf)
+
+
 def build_blank() -> bytes:
     """A freshly initialised SRAM: signatures only, no saves.
 

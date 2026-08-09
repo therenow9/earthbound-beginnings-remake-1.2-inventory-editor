@@ -45,13 +45,18 @@ EBBR = Layout(
 
 #: Stock EarthBound (USA). Included so the tool can recognise a vanilla save
 #: and refuse it with a clear message rather than mangling it.
+#:
+#: The header layout is IDENTICAL to EBBR — same data offset, same checksum
+#: words. Only the block geometry differs (0x500/0x4E0 here, 0x550/0x530 for
+#: the remake). Confirmed against a real vanilla save: both mirror copies of
+#: slot 0 match sum and xor exactly over +0x20..+0x500.
 VANILLA = Layout(
     name="EarthBound (USA)",
     block_stride=0x500,
-    data_offset=0x18,
+    data_offset=0x20,
     data_len=0x4E0,
-    ck_sum_at=0x14,
-    ck_xor_at=0x16,
+    ck_sum_at=0x1C,
+    ck_xor_at=0x1E,
 )
 
 KNOWN_LAYOUTS = (EBBR, VANILLA)

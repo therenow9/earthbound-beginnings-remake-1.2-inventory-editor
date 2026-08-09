@@ -4,8 +4,11 @@ A save editor for **EarthBound Beginnings Remake**, the SNES ROM hack that
 rebuilds Mother 1 inside EarthBound's engine.
 
 Existing EarthBound save editors do not work on it. The remake changed the SRAM
-block geometry and header layout, and reassigned the item table, so a vanilla
-editor will either refuse the file or corrupt it.
+block geometry and reassigned the item table, so a vanilla editor will either
+refuse the file or corrupt it. (The block *header* layout is unchanged — data
+still starts at `+0x20` with checksums at `+0x1C`/`+0x1E`. Only the stride
+differs, `0x550` against vanilla's `0x500`, which is enough to break everything
+downstream.)
 
 > ⚠️ Experimental. Always keep a backup. The tool writes one automatically, but
 > a bad edit can still cost you a save.
@@ -19,10 +22,13 @@ the useful part and the part that is already understood.
 Working: container handling (block detection, checksum validation and repair,
 mirror-copy consistency), character records, inventories, equipment, and a CLI.
 
-Incomplete: the item table. 18 ids are known, most confirmed against two
-independent saves; the rest of the game's items are unmapped. See
-[docs/PLAN.md](docs/PLAN.md) — the intended source is a CoilSnake decompile of
-the patched ROM.
+The item table is complete: all 253 named ids, read straight out of the ROM by
+[tools/extract_items.py](tools/extract_items.py). You supply your own ROM; the
+repo ships names and ids only.
+
+**Not yet proven: writing.** Every read path is confirmed against real saves,
+but no edit has been round-tripped through the actual game yet. Treat `give`
+and `equip` as experimental until it has. See [docs/PLAN.md](docs/PLAN.md).
 
 ## Install
 
@@ -74,13 +80,42 @@ The most important test is `test_roundtrip_is_byte_identical`: load a save,
 write it back with no edits, and require the output to equal the input byte for
 byte. If that fails, nothing else can be trusted.
 
+Second most important is `test_layout_constants_match_real_saves`, which pins
+the geometry to literal measured values. The other layout tests build their
+fixtures *from* those constants, so they stay green even when the constants are
+wrong — which is exactly how the vanilla layout stayed broken through a fully
+passing suite.
+
+### Local ROMs and saves
+
+Not committed, and ignored wholesale by directory:
+
+```
+roms/remake/    roms/vanilla/
+saves/remake/   saves/vanilla/
+```
+
+Keeping the two games apart matters beyond tidiness: bsnes matches SRAM to ROM
+by filename, so a remake save sitting next to vanilla EarthBound is a way to
+silently reinitialise it. Regenerate the item table after adding a ROM:
+
+```bash
+python tools/extract_items.py "roms/remake/<rom>.sfc" \
+    --compare "roms/vanilla/EarthBound (USA).sfc"
+```
+
 ## Contributing format findings
 
-Mark every entry in `docs/FORMAT.md` as **VERIFIED** or **INFERRED**, and say
-what established it. Verified means confirmed against two or more independent
-saves. This distinction matters more than it sounds: every wrong conclusion
-during the original reverse engineering came from a single-source inference
-stated with too much confidence.
+Mark every entry in `docs/FORMAT.md` as **VERIFIED**, **ROM** or **INFERRED**,
+and say what established it. Verified means confirmed against two or more
+independent saves; ROM means read out of the ROM itself. This distinction
+matters more than it sounds: every wrong conclusion during the original reverse
+engineering came from a single-source inference stated with too much confidence.
+
+Keep ROM and VERIFIED separate rather than merging them into "known good".
+`items.check_against_known()` validates a fresh ROM extraction against the
+save-derived ids *only*; folding ROM-derived names into that set would make the
+check compare the ROM against itself and quietly stop catching anything.
 
 ## Credits
 

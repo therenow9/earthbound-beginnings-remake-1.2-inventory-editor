@@ -2,31 +2,52 @@
 
 The remake reassigned EarthBound's item ids, so vanilla tables are wrong here.
 
-The entries below were derived by hand from real saves and screenshots. Each
-one is tagged with how it was established. Only entries confirmed against two
-independent save files are marked VERIFIED — everything else is a working guess
+Every entry is tagged with how it was established. VERIFIED means the same id
+was seen in two or more independent saves; ROM means it was read out of the
+ROM's own item table; INFERRED is a single observation or a guess from context
 and must not be trusted for writes without checking in-game first.
 
-The full table should come from CoilSnake: decompile the patched ROM and read
-the item names and indices out of the generated project data. Drop the result
-in data/items.yml and it will override these built-ins. See docs/PLAN.md.
+ROM and VERIFIED are kept apart on purpose rather than collapsed into one
+"known good" tag: `check_against_known()` deliberately validates *only* the
+VERIFIED entries, because checking ROM-derived names against a ROM import
+would be circular and would prove nothing.
+
+The full table is read straight out of the ROM's item table by
+`tools/extract_items.py` into data/items.json, which overrides these built-ins
+at startup. CoilSnake turned out to be unnecessary: the names sit at a fixed
+stride in plain EB text. See docs/PLAN.md.
+
+The hand-derived entries below are deliberately kept after that import. They
+are what `check_against_known()` validates a fresh extraction against, so
+deleting them would remove the only independent check that the table was read
+at the right offset.
 """
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 VERIFIED = "verified"     # same id observed in >=2 independent saves
 INFERRED = "inferred"     # single observation, or reasoned from context
+ROM = "rom"               # read from the ROM's own item table
+
+#: Where the generated table lands, relative to the repo root.
+DEFAULT_TABLE = Path(__file__).resolve().parents[2] / "data" / "items.json"
 
 #: id -> (name, provenance)
+#:
+#: Names marked INFERRED here were placeholders invented from the equip slot
+#: they appeared in; the ROM has since supplied the real ones (noted inline).
+#: They are left as-is because they record what a *save alone* could establish,
+#: which is the baseline the ROM import is checked against.
 ITEMS: dict[int, tuple[str, str]] = {
     0x19: ("Hank's bat",      VERIFIED),
-    0x1E: ("Ana's weapon",    INFERRED),   # equipped weapon slot, name unknown
-    0x28: ("Lloyd's weapon",  INFERRED),
+    0x1E: ("Iron skillet",    ROM),        # was "Ana's weapon" (placeholder)
+    0x28: ("Zip gun",         ROM),        # was "Lloyd's weapon" (placeholder)
     0x39: ("Rain pendant",    VERIFIED),
     0x3A: ("Flame pendant",   VERIFIED),
-    0x3B: ("Lloyd's pendant", INFERRED),   # name unknown; id from equip slot
+    0x3B: ("Earth pendant",   ROM),        # was "Lloyd's pendant" (placeholder)
     0x53: ("Onyx hook",       VERIFIED),
     0x5A: ("Hamburger",       VERIFIED),
     0x6D: ("Life-up cream",   VERIFIED),
@@ -37,7 +58,7 @@ ITEMS: dict[int, tuple[str, str]] = {
     0xCA: ("Town map",        VERIFIED),
     0xE0: ("Magic coin",      VERIFIED),
     0xE5: ("Goddess band",    VERIFIED),
-    0xE6: ("Katana",          INFERRED),   # single save, equipped by Teddy
+    0xE6: ("Katana",          ROM),        # guessed from one save; ROM agrees
     0xEB: ("Breadcrumbs",     VERIFIED),
 }
 
@@ -59,24 +80,50 @@ def find(query: str) -> list[tuple[int, str]]:
     return [(i, n) for i, (n, _) in sorted(ITEMS.items()) if q in n.lower()]
 
 
-def load_yaml(path: str | Path) -> int:
-    """Merge a CoilSnake-derived table, overriding the built-ins.
+def _merge(raw: dict, default_provenance: str = ROM) -> int:
+    """Merge a decoded table into ITEMS, overriding the built-ins.
 
-    Expected shape:  {id: name}  or  {id: {name: ..., provenance: ...}}
-    Returns the number of entries loaded.
+    Accepts  {id: name}  or  {id: {name: ..., provenance: ...}}, with ids as
+    ints or as strings in any base ("0xE5", "229").
+    Returns the number of entries merged.
     """
-    import yaml  # optional dependency; only needed once a table exists
-
-    raw = yaml.safe_load(Path(path).read_text()) or {}
     count = 0
-    for key, val in raw.items():
+    for key, val in (raw or {}).items():
         item_id = int(key, 0) if isinstance(key, str) else int(key)
         if isinstance(val, dict):
-            ITEMS[item_id] = (val["name"], val.get("provenance", VERIFIED))
+            ITEMS[item_id] = (val["name"], val.get("provenance", default_provenance))
         else:
-            ITEMS[item_id] = (str(val), VERIFIED)
+            ITEMS[item_id] = (str(val), default_provenance)
         count += 1
     return count
+
+
+def load_json(path: str | Path) -> int:
+    """Merge the generated table from data/items.json. Stdlib only."""
+    return _merge(json.loads(Path(path).read_text(encoding="utf-8")))
+
+
+def load_yaml(path: str | Path) -> int:
+    """Merge a YAML table. Needs the optional `yaml` extra.
+
+    Kept for hand-maintained tables; the generated one is JSON so that the
+    package has no required runtime dependencies.
+    """
+    import yaml  # optional dependency
+
+    return _merge(yaml.safe_load(Path(path).read_text(encoding="utf-8")))
+
+
+def load_default() -> int:
+    """Load data/items.json if it is present. Returns 0 if it is not.
+
+    Called at CLI startup. A missing or unreadable table must never be fatal —
+    the built-ins below are enough to run, just with fewer names.
+    """
+    try:
+        return load_json(DEFAULT_TABLE)
+    except (OSError, ValueError):
+        return 0
 
 
 def check_against_known(table: dict[int, str]) -> list[str]:

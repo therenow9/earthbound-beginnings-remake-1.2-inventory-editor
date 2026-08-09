@@ -10,7 +10,7 @@ sys.path.insert(0, str(ROOT))
 
 from ebbr import layout as L                     # noqa: E402
 from ebbr.sram import SaveFile, SaveError, sum16, xor16  # noqa: E402
-from tools.make_fixture import build, build_blank        # noqa: E402
+from tools.make_fixture import build, build_blank, build_vanilla  # noqa: E402
 
 
 @pytest.fixture
@@ -88,6 +88,73 @@ def test_blank_sram_has_no_valid_blocks():
 def test_rejects_non_sram():
     with pytest.raises(SaveError, match="signature"):
         SaveFile(b"\x00" * 0x2000)
+
+
+# --- vanilla EarthBound discrimination ---------------------------------------
+#
+# The remake and vanilla share an identical header layout (data at +0x20,
+# checksums at +0x1C/+0x1E) and differ only in block geometry. That makes the
+# stride the sole discriminator, so it has to be tested from both sides.
+
+def test_layout_constants_match_real_saves():
+    """Pin the geometry to what real files actually contain.
+
+    The fixture builders derive their bytes from these same constants, so every
+    other layout test here stays self-consistent even if the numbers are wrong
+    — which is how VANILLA shipped with data_offset 0x18 and checksums at
+    0x14/0x16 through a fully passing suite. Only a hard-coded expectation
+    catches that, so these values are transcribed from real saves:
+
+      EBBR    - four independent remake saves
+      VANILLA - a real stock EarthBound save, both mirrors of slot 0, sums
+                C57F/E205 and C583/E201 over +0x20..+0x500
+
+    Both games use the SAME header layout. Only stride and length differ.
+    """
+    assert (L.EBBR.data_offset, L.EBBR.ck_sum_at, L.EBBR.ck_xor_at) == (0x20, 0x1C, 0x1E)
+    assert (L.EBBR.block_stride, L.EBBR.data_len) == (0x550, 0x530)
+
+    assert (L.VANILLA.data_offset, L.VANILLA.ck_sum_at, L.VANILLA.ck_xor_at) == (0x20, 0x1C, 0x1E)
+    assert (L.VANILLA.block_stride, L.VANILLA.data_len) == (0x500, 0x4E0)
+
+    # Data must fill the block exactly, or blocks overlap or leave a gap.
+    for lay in (L.EBBR, L.VANILLA):
+        assert lay.block_len == lay.block_stride, lay.name
+
+
+def test_detects_vanilla_layout():
+    assert SaveFile(build_vanilla()).layout is L.VANILLA
+
+
+def test_vanilla_blocks_validate():
+    s = SaveFile(build_vanilla())
+    assert len(s.populated) == 2       # 1 slot x 2 mirrors
+    assert all(b.checksums_ok() for b in s.populated)
+
+
+def test_ebbr_save_never_reads_as_vanilla():
+    """Cross-check the discriminator in the direction that would corrupt data.
+
+    Both layouts checksum from the same base offset, so the only thing keeping
+    them apart is the span they cover. Misidentifying a remake save as vanilla
+    would write 0x4E0-byte checksums over a 0x530-byte block.
+    """
+    s = SaveFile(build(seed=1, slots=2), layout=L.VANILLA)
+    assert not any(b.checksums_ok() and not b.is_empty for b in s.blocks)
+
+
+def test_vanilla_save_never_reads_as_ebbr():
+    s = SaveFile(build_vanilla(), layout=L.EBBR)
+    assert not any(b.checksums_ok() and not b.is_empty for b in s.blocks)
+
+
+def test_cli_refuses_vanilla_save(tmp_path, capsys):
+    """info must exit non-zero and say so, rather than decoding nonsense."""
+    from ebbr.cli import main
+    p = tmp_path / "vanilla.srm"
+    p.write_bytes(build_vanilla())
+    assert main(["info", str(p)]) == 1
+    assert "not the remake" in capsys.readouterr().out
 
 
 # --- checksums ---------------------------------------------------------------
