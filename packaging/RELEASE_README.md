@@ -26,6 +26,14 @@ your save each time it saves, but do not rely on that alone.
 If your save is precious and irreplaceable, honestly, think twice before
 using this on it.
 
+### Only tested on remake v1.2
+
+That's the version this was built and tested against. Other versions may work
+fine, or may not — nobody has tried. The item list was read out of a v1.2 ROM,
+so on a different version the item *names* could be wrong even if the editing
+works, which would be a confusing way to lose a save. If you're on something
+else, be extra careful and definitely keep that backup.
+
 ### Some of this is riskier than the rest
 
 Not everything here is equally tested, and it's worth knowing which parts are

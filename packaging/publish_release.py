@@ -37,10 +37,15 @@ def run(cmd: list[str], **kw) -> subprocess.CompletedProcess:
 
 
 def version() -> str:
-    text = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
-    m = re.search(r'^version\s*=\s*"([^"]+)"', text, re.M)
+    """Read the single source of truth in src/ebbr/__init__.py.
+
+    Parsed rather than imported so this keeps working without the package
+    installed.
+    """
+    text = (ROOT / "src" / "ebbr" / "__init__.py").read_text(encoding="utf-8")
+    m = re.search(r'^__version__\s*=\s*"([^"]+)"', text, re.M)
     if not m:
-        sys.exit("no version in pyproject.toml")
+        sys.exit("no __version__ in src/ebbr/__init__.py")
     return m.group(1)
 
 
@@ -57,6 +62,11 @@ irreplaceable, think twice.
 Also: **close your emulator before editing.** It writes the save file when it
 closes and will overwrite your changes. This is the single most common reason
 people think the editor did nothing.
+
+**Tested against EarthBound Beginnings Remake v1.2 only.** Other versions may
+work or may not — nobody has tried. The item list was read out of a v1.2 ROM,
+so if another version moved items around, the names shown could be wrong even
+though the editing itself works.
 
 ## What it does
 
@@ -125,8 +135,19 @@ Ships no ROM, patch, or game data.
 def main(argv=None) -> int:
     p = argparse.ArgumentParser()
     p.add_argument("--force", action="store_true",
-                   help="replace an existing tag and release")
+                   help="delete and recreate an existing release")
+    p.add_argument("--notes-out", metavar="PATH",
+                   help="write the release notes to PATH and exit; this is "
+                        "how CI gets them, so there is one copy of the text")
     args = p.parse_args(argv)
+
+    if args.notes_out:
+        # Written here rather than piped, because the notes contain characters
+        # a Windows console cannot encode and shell redirection would mangle
+        # them (or fail outright).
+        Path(args.notes_out).write_text(NOTES, encoding="utf-8")
+        print(f"wrote {args.notes_out} ({len(NOTES.splitlines())} lines)")
+        return 0
 
     tag = f"v{version()}"
     cli = gh()

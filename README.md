@@ -12,6 +12,11 @@ downstream.)
 
 > ⚠️ Experimental. Always keep a backup. The tool writes one automatically, but
 > a bad edit can still cost you a save.
+>
+> Built and tested against **remake v1.2** only. The item table was read out of
+> a v1.2 ROM, so another version could show wrong item names even where the
+> editing itself works. Items and equipment are the well-tested part; removing
+> party members and extreme level or stat values are barely tested at all.
 
 ## Status
 

@@ -21,6 +21,7 @@ from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
 
 from . import items, layout as L
+from . import __version__
 from .sram import Character, SaveError, SaveFile
 
 APP_NAME = "EBBR Save Editor"
@@ -478,10 +479,12 @@ class EditorApp:
     def _about(self) -> None:
         messagebox.showinfo(
             APP_NAME,
-            f"{APP_NAME}\n\n"
-            "Inventory and equipment editor for EarthBound Beginnings "
-            "Remake.\n\nAlways keep a backup. A .bak is written on save, but "
-            "a bad edit can still cost you a file.",
+            f"{APP_NAME}\nversion {__version__}\n\n"
+            "Item, equipment and stat editor for EarthBound Beginnings "
+            "Remake. Tested against remake v1.2 only.\n\n"
+            "EXPERIMENTAL — it can and will break saves. Always keep your own "
+            "backup. A .bak is written next to your save on each write, but "
+            "do not rely on that alone.",
             parent=self.root)
 
     def status(self, text: str) -> None:

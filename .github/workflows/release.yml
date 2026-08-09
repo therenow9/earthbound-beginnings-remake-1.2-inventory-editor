@@ -1,0 +1,102 @@
+name: Release
+
+# Builds the Windows executable and publishes it, on every push to master.
+#
+# How the version works: the tag comes from `version` in pyproject.toml.
+#   - that version has no release yet -> a new release is created
+#   - it already has one              -> the existing release's files are
+#                                        replaced with this build
+#
+# So ordinary commits keep the current release's download up to date, and
+# bumping the version in pyproject.toml is what cuts a new one. That avoids
+# a release per commit while still meaning the download is never stale.
+#
+# Release notes come from packaging/publish_release.py --print-notes, so the
+# text lives in exactly one place whether you publish from CI or by hand.
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+# Needed to create releases and push tags with the default token.
+permissions:
+  contents: write
+
+concurrency:
+  # If several commits land quickly, only publish the newest.
+  group: release
+  cancel-in-progress: true
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install
+        run: pip install -e ".[dev]" pyinstaller
+
+      - name: Run tests
+        # Never ship a build that does not pass.
+        run: python -m pytest -q
+
+      - name: Read version
+        # Single source of truth is src/ebbr/__init__.py; bumping that line is
+        # what cuts a new release.
+        id: v
+        shell: pwsh
+        run: |
+          $m = Select-String -Path src/ebbr/__init__.py -Pattern '^__version__\s*=\s*"([^"]+)"'
+          if (-not $m) { throw "no __version__ in src/ebbr/__init__.py" }
+          $version = $m.Matches[0].Groups[1].Value
+          "version=$version" >> $env:GITHUB_OUTPUT
+          "tag=v$version"    >> $env:GITHUB_OUTPUT
+          Write-Host "version $version"
+
+      - name: Build the executable
+        run: python packaging/build_exe.py
+
+      - name: Generate release notes
+        run: python packaging/publish_release.py --notes-out release-notes.md
+
+      - name: Publish
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = "${{ steps.v.outputs.tag }}"
+          $exe   = "dist/EBBR-Save-Editor.exe"
+          $guide = "packaging/RELEASE_README.md"
+
+          gh release view $tag *> $null
+          $exists = ($LASTEXITCODE -eq 0)
+          $global:LASTEXITCODE = 0
+
+          if ($exists) {
+            Write-Host "$tag exists - replacing its files with this build"
+            gh release upload $tag $exe $guide --clobber
+            if ($LASTEXITCODE -ne 0) { throw "upload failed" }
+            gh release edit $tag --notes-file release-notes.md
+            if ($LASTEXITCODE -ne 0) { throw "notes update failed" }
+          } else {
+            Write-Host "$tag is new - creating the release"
+            gh release create $tag $exe $guide `
+              --title "EBBR Save Editor $tag" `
+              --notes-file release-notes.md
+            if ($LASTEXITCODE -ne 0) { throw "release creation failed" }
+          }
+          Write-Host "published $tag"
+
+      - name: Keep the build for a while even if the release step failed
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: EBBR-Save-Editor
+          path: dist/EBBR-Save-Editor.exe
+          if-no-files-found: warn
