@@ -37,7 +37,10 @@ check on demand.
 ## Install
 
 **Just want to edit a save?** Download `EBBR-Save-Editor.exe` from the
-[latest release](../../releases/latest) and run it. Nothing to install.
+[latest release](../../releases/latest) and run it. Nothing to install, and
+**no ROM needed** — the editor only ever opens your `.srm`, and all 253 item
+names are built into the executable. A ROM is only required to regenerate the
+item table from source.
 
 From source:
 
@@ -178,6 +181,24 @@ silently reinitialise it. Regenerate the item table after adding a ROM:
 python tools/extract_items.py "roms/remake/<rom>.sfc" \
     --compare "roms/vanilla/EarthBound (USA).sfc"
 ```
+
+## Reporting a bug
+
+[Open an issue.](../../issues) Three things account for most reports and none
+is a bug: a vanilla EarthBound save being refused, a blank SRAM from a
+ROM/filename mismatch, and an edit "not working" because the emulator was still
+open and overwrote the file on exit.
+
+Worth including: what you did, what happened versus what you expected, the
+editor and EBBR versions, and your `.srm` if you are willing — nearly every
+report is reproducible in seconds with the file and guesswork without it.
+
+**Never attach a ROM or a patch.** This project ships no game data and cannot
+accept any. A save file alone is fine.
+
+Note that Offense and Defense are recalculated by the game on any equipment
+change, and maximum HP/PP change on level-up, so the editor and the game
+disagreeing on those is expected. Anything else should match exactly.
 
 ## Contributing format findings
 

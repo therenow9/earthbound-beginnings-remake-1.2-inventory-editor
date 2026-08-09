@@ -12,10 +12,18 @@ refuse your file or corrupt it.
 
 ---
 
+## What you need
+
+Just the `.exe` and your save file. **No ROM, no patch, no Python, nothing to
+install** — the editor never opens a ROM, and every item name is already built
+into the executable.
+
+(A ROM is only needed by developers regenerating the item table from source.
+This project ships no game data and never asks you for any.)
+
 ## Getting started
 
-1. Download **`EBBR-Save-Editor.exe`** below and run it. There is nothing to
-   install — no Python, no dependencies.
+1. Download **`EBBR-Save-Editor.exe`** below and run it.
 2. `File → Open`, and pick your `.srm`.
 3. Edit. `File → Save`.
 
@@ -109,6 +117,42 @@ than a damaged save — see *Finding your save* above.
 **My edit did not show up in game.**
 The emulator was probably still running and overwrote the file on exit. Close
 it completely, then edit.
+
+## Reporting a bug
+
+Open an issue:
+<https://github.com/therenow9/earthbound-beginnings-remake-1.2-inventory-editor/issues>
+
+Check the three cases above first — they account for most reports and none of
+them is a bug in the editor.
+
+What to include:
+
+1. **What you did**, specifically enough to repeat. "Gave Ana a Silver sword
+   and equipped it" beats "equipment is broken".
+2. **What happened, and what you expected instead.** If a number is wrong, say
+   what the editor showed *and* what the game showed — those disagreeing is
+   itself the useful signal.
+3. **Your `.srm`**, if you are comfortable sharing it. This matters more than
+   everything else combined: nearly every problem is reproducible in seconds
+   with the actual file and guesswork without it. It is a save file, not
+   personal data, and it is useless without the ROM.
+4. **Versions** — the editor version from Help ▸ About, your EBBR version
+   (1.2, or whatever the title screen says), and which emulator.
+
+If the editor showed an error message, paste it verbatim.
+
+**Please do not attach a ROM or a patch**, to an issue or anywhere else. This
+project ships no game data and cannot accept any. A save file on its own is
+fine.
+
+### Something to check before reporting a wrong number
+
+Stats have two places they can disagree. **Offense and Defense** are
+recalculated by the game whenever a character changes equipment, so the editor
+showing one value and the game another is expected for those two. The same goes
+for maximum HP and PP after a level-up. Everything else should match exactly —
+if it does not, that is worth an issue.
 
 ---
 

@@ -48,8 +48,10 @@ NOTES = """\
 First public release. Inventory and equipment editing for **EarthBound
 Beginnings Remake**, with a GUI.
 
-Download **EBBR-Save-Editor.exe** below and run it — nothing to install.
-Read **RELEASE_README.md** for how to use it and where to find your save.
+Download **EBBR-Save-Editor.exe** below and run it — nothing to install, and
+**no ROM required**. The editor only ever opens your `.srm`; all 253 item names
+are built in. Read **RELEASE_README.md** for how to use it, where to find your
+save, and how to report a bug.
 
 ### What it does
 
@@ -81,6 +83,13 @@ Still: it is a save editor for a fan ROM hack. Keep the backup.
   block geometry, and writing remake layout to a vanilla save would corrupt it.
 - Close your emulator fully before editing. It writes SRAM out on exit and
   will overwrite your changes.
+
+### Found a bug?
+
+Open an issue with what you did, what happened, and your `.srm` if you are
+willing to share it — that makes almost anything reproducible in seconds.
+Please do not attach a ROM or patch; this project ships no game data and
+cannot accept any.
 
 Ships no ROM, patch, or game data.
 """
