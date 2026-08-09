@@ -143,8 +143,12 @@ involvement in it** — they did not build it, review it, endorse it or ask for
 it. Please do not report problems with this editor to them, and do not blame
 them if it breaks your save.
 
-The remake itself is their work, building on what Clyde "Tomato" Mandelin
-started, and it is the reason this tool exists at all.
+None of which is a complaint — the opposite. EarthBound Beginnings Remake is
+an incredible piece of work, and rebuilding Mother 1 inside EarthBound's engine
+is an enormous undertaking. Huge thanks to Gabbls, livvy94 and everyone who has
+put time into the project, and to Clyde "Tomato" Mandelin, whose work it builds
+on. I only made this because I enjoyed the remake enough to want to poke around
+inside it — I genuinely appreciate all the work that has gone into it.
 
 ## Found a bug?
 

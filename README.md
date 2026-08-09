@@ -247,6 +247,13 @@ Remake had no involvement in it.** They did not build it, review it, endorse
 it, or ask for it. Please do not send them bug reports about this editor, and
 do not blame them if it breaks a save.
 
+None of which is a complaint — the opposite. The remake is an incredible piece
+of work; rebuilding Mother 1 inside EarthBound's engine is an enormous
+undertaking and the care shows. Huge thanks to Gabbls, livvy94 and everyone who
+has put time into it, and to Clyde "Tomato" Mandelin, whose work it builds on.
+This editor only exists because the remake was good enough to make me want to
+poke around inside it, and I appreciate all the work that went into it.
+
 ## Credits
 
 Reverse engineering by inspecting real saves. Structure and approach owe a debt

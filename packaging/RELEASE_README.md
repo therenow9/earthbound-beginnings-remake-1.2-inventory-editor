@@ -235,9 +235,21 @@ So please:
   the fact that you were warned it might.
 - Don't treat anything here as official information about the remake.
 
-Credit where it's due, though: EarthBound Beginnings Remake is their work,
-building on what Clyde "Tomato" Mandelin started, and it's the reason this
-tool exists at all. Thanks also to
+### A genuine thank you
+
+None of the above is a complaint — the opposite, really.
+
+EarthBound Beginnings Remake is an incredible piece of work. Rebuilding Mother
+1 inside EarthBound's engine is an enormous undertaking, and the care that has
+gone into it shows everywhere. Huge thanks to Gabbls, livvy94 and everyone else
+who has put time into the project, and to Clyde "Tomato" Mandelin, whose work
+it builds on.
+
+I only made this editor because I enjoyed the remake enough to want to poke
+around inside it. It exists because of their work, and I really do appreciate
+all of it.
+
+Thanks also to
 [Oh Mother](https://github.com/clickysteve/Oh-Mother-Earthbound-Save-File-Editor)
 by clickysteve, which does a much bigger job for the original EarthBound and
 was the model for how to approach this.
