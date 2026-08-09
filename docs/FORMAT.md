@@ -179,6 +179,34 @@ Offense and Defense are stored rather than derived, but the game recalculates
 both whenever equipment changes, so editing those two only lasts until the
 player next changes gear.
 
+### Stat growth per level is not stored — INVESTIGATED, NOT FOUND
+
+Worth recording so nobody repeats the search. The ROM holds no per-level stat
+table, under either plausible layout:
+
+- **Row-major** (seven stats contiguous per level): the exact byte sequences
+  for all four characters at both observed levels — eight distinct 7-byte
+  fingerprints — appear nowhere in the 4 MB image.
+- **Column-major** (one level-indexed array per stat): anchoring on Offense
+  matching at both levels gives 33 candidate bases; requiring the other six
+  stats to match at both levels too — fourteen simultaneous constraints —
+  eliminates every one, across ten different stride assumptions.
+
+So the game computes growth in code, as the EarthBound engine does, from
+per-character growth rates. Editing a level therefore cannot bring the stats
+along with it without reproducing that routine.
+
+Fitting a curve is not currently possible either: two saves give only two
+level observations per character, and a two-parameter fit through two points
+is exactly determined, so it would validate against nothing. The values are
+also not a plain multiple of level — Lloyd's Offense equals his level at both
+points and Ninten's is 1.68x at both, but Ana's drifts from 0.75x to 0.70x and
+Lloyd's Force from 1.00x to 1.04x.
+
+**What would settle it:** four to six saves per character at spread levels, or
+a run of consecutive level-ups. Fit on part, predict the rest — that is the
+line between deriving the growth and inventing it.
+
 ### Still unmapped
 
 `0x00..0x05`, `0x0A`, `0x0F`, `0x10..0x15`, `0x1D..0x23`, `0x37..0x45` and

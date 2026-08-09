@@ -127,6 +127,12 @@ class CharacterPane(ttk.Frame):
         field(progress, "level", width=4).pack(side="left", padx=(4, 12))
         ttk.Label(progress, text="EXP").pack(side="left")
         field(progress, "exp", width=10).pack(side="left", padx=(4, 0))
+        # The game computes stat growth in code, so we cannot follow a level
+        # change with the stats it would have produced. Say so, rather than
+        # let the level field look broken.
+        ttk.Label(progress,
+                  text="changing level does not adjust stats — set those below",
+                  foreground="#777").pack(side="left", padx=12)
 
         base = ttk.LabelFrame(self, text="Stats", padding=6)
         base.pack(fill="x", pady=(0, 8))
