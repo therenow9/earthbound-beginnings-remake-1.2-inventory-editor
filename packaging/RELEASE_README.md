@@ -41,11 +41,16 @@ is written out on exit and will overwrite your changes.
 | **Items** | add, remove and reorder each character's 14-slot bag |
 | **Equipment** | weapon, body, arms and other, per character |
 | **HP / PP** | current and maximum |
+| **Level & EXP** | per character |
+| **Stats** | Offense, Defense, Speed, Fight, Wisdom, Strength, Force |
 | **Money** | on hand |
 
-Deliberately not editable: levels, EXP, base stats, PSI and story flags. Those
-would need open-ended reverse engineering for little benefit, and guessing at
-them is how save editors corrupt files.
+Still not editable: PSI, the melody counter, and story flags. Those are not
+mapped, and guessing at them is how save editors corrupt files.
+
+One caveat on **Offense and Defense**: the game recalculates both whenever the
+character changes equipment, so edits to those two last only until then. The
+other five stats stick.
 
 ### It will stop you doing impossible things
 

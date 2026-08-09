@@ -102,6 +102,25 @@ def resolve_equip_slot(name: str) -> str | None:
     name = EQUIP_SLOT_ALIASES.get(name, name)
     return name if name in EQUIP_SLOTS else None
 
+#: Level, u8, and experience, u24 LE. VERIFIED: the experience bytes decode to
+#: exactly the 1050480 the Status screen reports, and level tracks 50 -> 57
+#: between the two real saves.
+LEVEL = 0x06
+EXP = 0x07
+EXP_SIZE = 3
+EXP_MAX = 0xFFFFFF
+
+#: Base stats, one byte each. VERIFIED by writing a distinct value to every
+#: byte of 0x16..0x23 at once and reading the Status screen back: the seven
+#: below appeared, in this order.
+#:
+#: Offense and Defense are stored rather than derived, but the game recomputes
+#: them whenever equipment changes — so an edit to those two lasts only until
+#: the player next changes gear.
+STATS = ("offense", "defense", "speed", "fight", "wisdom", "strength", "force")
+STAT_OFFSETS = {name: 0x16 + i for i, name in enumerate(STATS)}
+STAT_LIMIT = 255        # one byte each
+
 CHAR_ID = 0x36
 
 #: Current HP/PP, u16 LE. VERIFIED in-game: writing 777 here made the Status

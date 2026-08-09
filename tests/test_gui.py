@@ -335,6 +335,82 @@ def test_saving_writes_a_backup_and_a_loadable_file(app, savefile):
         assert blk.checksums_ok()
 
 
+# --- typed-but-not-committed values must not be silently dropped ------------
+#
+# Entry widgets commit on Return or focus-out, and clicking the File menu does
+# neither. "Type a number, then Save" was writing the old value.
+
+def test_typing_money_then_saving_without_leaving_the_field(app, savefile):
+    app.money.set("54321")
+    app.write()
+    assert SaveFile.load(savefile).blocks[0].money == 54321
+
+
+def test_typing_hp_then_saving_without_leaving_the_field(app, savefile):
+    pane = app.panes[0]
+    pane.stat_vars["hp_max"].set("700")
+    pane.stat_vars["hp"].set("650")
+    app.write()
+    ch = SaveFile.load(savefile).blocks[0].character(0)
+    assert (ch.hp_max, ch.hp) == (700, 650)
+
+
+def test_flush_applies_maxima_before_current_values(app):
+    """Raising max and current together must not clamp against the old max."""
+    pane = app.panes[0]
+    ceiling = app.block().character(0).hp_max
+    pane.stat_vars["hp"].set(str(ceiling + 200))
+    pane.stat_vars["hp_max"].set(str(ceiling + 200))
+    app.flush_pending()
+    ch = app.block().character(0)
+    assert ch.hp_max == ceiling + 200
+    assert ch.hp == ceiling + 200, "current was clamped against the old maximum"
+
+
+def test_typed_value_counts_as_an_unsaved_change(app):
+    app.money.set("777")
+    assert app._confirm_discard() is True    # patched askyesno returns True
+    assert app.dirty, "typed edit was not registered before the discard check"
+
+
+def test_switching_slot_does_not_move_a_typed_value(app):
+    """A value typed for one slot must not land on another."""
+    app.money.set("4242")
+    app._slot_changed()
+    assert app.block().money == 4242
+
+
+def test_level_exp_and_stats_commit_from_the_gui(app, savefile):
+    pane = app.panes[0]
+    pane.stat_vars["level"].set("44")
+    pane.stat_vars["exp"].set("777888")
+    pane.stat_vars["speed"].set("123")
+    app.write()
+
+    ch = SaveFile.load(savefile).blocks[0].character(0)
+    assert ch.level == 44
+    assert ch.exp == 777888
+    assert ch.stat("speed") == 123
+
+
+def test_gui_clamps_level_and_stats(app):
+    pane = app.panes[0]
+    pane.stat_vars["level"].set("500")
+    pane._commit_stat("level")
+    assert app.block().character(0).level == 99
+
+    pane.stat_vars["force"].set("9999")
+    pane._commit_stat("force")
+    assert app.block().character(0).stat("force") == L.STAT_LIMIT
+
+
+def test_gui_accepts_exp_typed_with_commas(app):
+    pane = app.panes[0]
+    pane.stat_vars["exp"].set("1,050,480")
+    pane._commit_stat("exp")
+    assert app.block().character(0).exp == 1050480
+
+
 def test_saving_with_no_changes_is_byte_identical(app, savefile):
     original = savefile.read_bytes()
     app.write()

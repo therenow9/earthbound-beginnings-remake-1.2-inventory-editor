@@ -42,8 +42,9 @@ def cmd_info(args) -> int:
         print(f"  party: {', '.join(blk.name(c) for c in blk.party)}")
         for cid in range(L.CHAR_COUNT):
             ch = blk.character(cid)
-            print(f"\n  {ch.name}  HP {ch.hp}/{ch.hp_max}  "
-                  f"PP {ch.pp}/{ch.pp_max}")
+            print(f"\n  {ch.name}  Lv {ch.level}  HP {ch.hp}/{ch.hp_max}  "
+                  f"PP {ch.pp}/{ch.pp_max}  EXP {ch.exp}")
+            print("     " + "  ".join(f"{k} {v}" for k, v in ch.stats.items()))
             for i, iid in enumerate(ch.inventory):
                 if iid:
                     print(f"     {i:2d}  0x{iid:02X}  {items.name(iid)}")

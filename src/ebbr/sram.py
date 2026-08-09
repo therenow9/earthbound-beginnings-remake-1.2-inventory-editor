@@ -167,6 +167,45 @@ class Character:
         return val
 
     @property
+    def level(self) -> int:
+        return self.block.read(self.base + L.LEVEL, 1)[0]
+
+    @level.setter
+    def level(self, val: int) -> None:
+        if not 1 <= val <= 99:
+            raise SaveError("level must be 1..99")
+        self.block.write(self.base + L.LEVEL, bytes([val]))
+
+    @property
+    def exp(self) -> int:
+        return int.from_bytes(
+            self.block.read(self.base + L.EXP, L.EXP_SIZE), "little")
+
+    @exp.setter
+    def exp(self, val: int) -> None:
+        if not 0 <= val <= L.EXP_MAX:
+            raise SaveError(f"experience must be 0..{L.EXP_MAX}")
+        self.block.write(self.base + L.EXP,
+                         val.to_bytes(L.EXP_SIZE, "little"))
+
+    def stat(self, name: str) -> int:
+        try:
+            return self.block.read(self.base + L.STAT_OFFSETS[name], 1)[0]
+        except KeyError:
+            raise SaveError(f"unknown stat {name!r}") from None
+
+    def set_stat(self, name: str, val: int) -> None:
+        if name not in L.STAT_OFFSETS:
+            raise SaveError(f"unknown stat {name!r}")
+        if not 0 <= val <= L.STAT_LIMIT:
+            raise SaveError(f"{name} must be 0..{L.STAT_LIMIT}")
+        self.block.write(self.base + L.STAT_OFFSETS[name], bytes([val]))
+
+    @property
+    def stats(self) -> dict[str, int]:
+        return {name: self.stat(name) for name in L.STATS}
+
+    @property
     def hp(self) -> int:
         return self.block.u16(self.base + L.HP_CUR)
 

@@ -113,8 +113,17 @@ independently from saves.
 | `0x24` | inventory, 14 bytes, one item id per slot, `00` empty | VERIFIED |
 | `0x32` | equip pointers, 4 bytes | VERIFIED |
 | `0x36` | character id | VERIFIED |
+| `0x06` | level, u8 | VERIFIED |
+| `0x07` | experience, u24 LE | VERIFIED |
 | `0x0B` | maximum HP, u16 LE | VERIFIED |
 | `0x0D` | maximum PP, u16 LE | VERIFIED |
+| `0x16` | Offense, u8 | VERIFIED |
+| `0x17` | Defense, u8 | VERIFIED |
+| `0x18` | Speed, u8 | VERIFIED |
+| `0x19` | Fight, u8 | VERIFIED |
+| `0x1A` | Wisdom, u8 | VERIFIED |
+| `0x1B` | Strength, u8 | VERIFIED |
+| `0x1C` | Force, u8 | VERIFIED |
 | `0x46` | second copy of HP — **not** the maximum, purpose unknown | VERIFIED |
 | `0x48` | current HP, u16 LE | VERIFIED |
 | `0x4C` | second copy of PP — **not** the maximum, purpose unknown | VERIFIED |
@@ -147,6 +156,35 @@ every sample carries no information about which is which. Two saves agreeing
 is not cross-validation when both are at full HP. The one row where they
 differed — an inactive party member — was worth more than the other seven
 combined.
+
+### Level, experience and base stats — VERIFIED
+
+Level is a plain byte at `0x06` and experience a u24 at `0x07`, which decodes
+to exactly the 1050480 the Status screen reports. Note the width: experience
+runs `0x07..0x09` and maximum HP begins at `0x0B`, so a u32 write would spill
+into the gap and eventually into max HP.
+
+The seven base stats are single bytes at `0x16..0x1C`, in the order Offense,
+Defense, Speed, Fight, Wisdom, Strength, Force.
+
+All of it was pinned in a single pass: write a distinct value to every byte of
+`0x16..0x23` at once, then read the Status screen and see which number landed
+where. `0x1D..0x23` produced no visible change and remain unidentified.
+
+Confirmed together afterwards — level 61, experience 1234567, HP 700/750,
+PP 250/300 and all seven stats written at once came back exactly on the Status
+screen, with the game recomputing "Exp. for next level" from them.
+
+Offense and Defense are stored rather than derived, but the game recalculates
+both whenever equipment changes, so editing those two only lasts until the
+player next changes gear.
+
+### Still unmapped
+
+`0x00..0x05`, `0x0A`, `0x0F`, `0x10..0x15`, `0x1D..0x23`, `0x37..0x45` and
+`0x4F..0x5C`. Known to be in there somewhere: the PSI learned-flags, the
+melody counter the Status screen draws as `♪` symbols, and whatever differs
+between mirror copies.
 
 The editor writes both copies whenever HP or PP changes. `0x46`/`0x4C` have no
 observed effect, but they match the current value in every genuine save, and

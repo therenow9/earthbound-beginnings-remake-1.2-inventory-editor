@@ -51,6 +51,15 @@ def build(seed: int = 0, slots: int = 1) -> bytes:
                 data[rec + fld:rec + fld + 2] = val.to_bytes(2, "little")
             data[rec + L.CHAR_ID] = cid
 
+            # Plausible level, experience and base stats, so tests exercise
+            # the same shape of data a real save has.
+            data[rec + L.LEVEL] = 20 + cid
+            exp = 50000 + 1000 * cid
+            data[rec + L.EXP:rec + L.EXP + L.EXP_SIZE] = \
+                exp.to_bytes(L.EXP_SIZE, "little")
+            for n, stat in enumerate(L.STATS):
+                data[rec + L.STAT_OFFSETS[stat]] = 40 + 5 * n + cid
+
             # A partly-filled bag, last slot free. Slot 0 is always a real
             # weapon so the equipment below is a combination the game could
             # actually produce.

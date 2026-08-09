@@ -100,25 +100,45 @@ class CharacterPane(ttk.Frame):
         self.app = app
         self.char_id = char_id
 
-        stats = ttk.Frame(self)
-        stats.pack(fill="x", pady=(0, 8))
         self.stat_vars: dict[str, tk.StringVar] = {}
+
+        def field(parent, which, width=6):
+            var = tk.StringVar()
+            self.stat_vars[which] = var
+            entry = ttk.Entry(parent, textvariable=var, width=width)
+            entry.bind("<FocusOut>", lambda _e, w=which: self._commit_stat(w))
+            entry.bind("<Return>", lambda _e, w=which: self._commit_stat(w))
+            return entry
+
+        vitals = ttk.Frame(self)
+        vitals.pack(fill="x", pady=(0, 4))
         for label, cur_field, max_field in (("HP", "hp", "hp_max"),
                                             ("PP", "pp", "pp_max")):
-            ttk.Label(stats, text=label).pack(side="left")
-            for which in (cur_field, max_field):
-                var = tk.StringVar()
-                self.stat_vars[which] = var
-                entry = ttk.Entry(stats, textvariable=var, width=6)
-                entry.pack(side="left", padx=(4, 0))
-                entry.bind("<FocusOut>",
-                           lambda _e, w=which: self._commit_stat(w))
-                entry.bind("<Return>", lambda _e, w=which: self._commit_stat(w))
-                if which == cur_field:
-                    ttk.Label(stats, text="/").pack(side="left", padx=2)
-            ttk.Label(stats, text="").pack(side="left", padx=8)
-        ttk.Label(stats, text="current / maximum",
+            ttk.Label(vitals, text=label).pack(side="left")
+            field(vitals, cur_field).pack(side="left", padx=(4, 0))
+            ttk.Label(vitals, text="/").pack(side="left", padx=2)
+            field(vitals, max_field).pack(side="left", padx=(0, 12))
+        ttk.Label(vitals, text="current / maximum",
                   foreground="#777").pack(side="left", padx=4)
+
+        progress = ttk.Frame(self)
+        progress.pack(fill="x", pady=(0, 4))
+        ttk.Label(progress, text="Level").pack(side="left")
+        field(progress, "level", width=4).pack(side="left", padx=(4, 12))
+        ttk.Label(progress, text="EXP").pack(side="left")
+        field(progress, "exp", width=10).pack(side="left", padx=(4, 0))
+
+        base = ttk.LabelFrame(self, text="Stats", padding=6)
+        base.pack(fill="x", pady=(0, 8))
+        for name in L.STATS:
+            cell = ttk.Frame(base)
+            cell.pack(side="left", padx=(0, 10))
+            ttk.Label(cell, text=name.title()).pack(side="top", anchor="w")
+            field(cell, name, width=5).pack(side="top")
+        ttk.Label(base, text="Offense and Defense are recalculated by the "
+                             "game when equipment changes",
+                  foreground="#777", wraplength=150,
+                  justify="left").pack(side="left", padx=6)
 
         body = ttk.Frame(self)
         body.pack(fill="both", expand=True)
@@ -161,7 +181,8 @@ class CharacterPane(ttk.Frame):
             return
         keep = self.listbox.curselection()
         for which, var in self.stat_vars.items():
-            var.set(str(getattr(ch, which)))
+            var.set(str(ch.stat(which) if which in L.STAT_OFFSETS
+                        else getattr(ch, which)))
 
         self.listbox.delete(0, "end")
         inv = ch.inventory
@@ -192,6 +213,26 @@ class CharacterPane(ttk.Frame):
     def _selected_slot(self) -> int | None:
         sel = self.listbox.curselection()
         return sel[0] if sel else None
+
+    def typed(self) -> dict[str, str]:
+        return {which: var.get() for which, var in self.stat_vars.items()}
+
+    def flush(self, typed: dict[str, str] | None = None) -> None:
+        """Commit anything typed but not yet applied.
+
+        Takes the typed values as a snapshot because committing one field
+        refreshes the pane, which rewrites every other box from the model and
+        would otherwise discard the rest of what the user typed.
+        """
+        if self.character() is None:
+            return
+        typed = typed or self.typed()
+        # Maxima first: raising a maximum has to land before the current value
+        # that depends on it, or current gets clamped against the old ceiling.
+        order = ["hp_max", "pp_max", "hp", "pp", "level", "exp", *L.STATS]
+        for which in order:
+            self.stat_vars[which].set(typed[which])
+            self._commit_stat(which)
 
     # --- mutations -----------------------------------------------------------
 
@@ -234,37 +275,58 @@ class CharacterPane(ttk.Frame):
         self.listbox.selection_clear(0, "end")
         self.listbox.selection_set(target)
 
+    #: Upper bound per editable field, and how to say its name.
+    LIMITS = {"hp": Character.STAT_MAX, "hp_max": Character.STAT_MAX,
+              "pp": Character.STAT_MAX, "pp_max": Character.STAT_MAX,
+              "level": 99, "exp": L.EXP_MAX}
+    LABELS = {"hp": "HP", "pp": "PP", "hp_max": "max HP", "pp_max": "max PP",
+              "level": "level", "exp": "EXP"}
+
     def _commit_stat(self, which: str) -> None:
         ch = self.character()
         if ch is None:
             return
         var = self.stat_vars[which]
-        current = getattr(ch, which)
+        is_base_stat = which in L.STAT_OFFSETS
+        current = ch.stat(which) if is_base_stat else getattr(ch, which)
+
+        raw = var.get().strip().replace(",", "")
+        # Untouched box: leave it alone. Clamping applies to what the user
+        # typed, never to what was already in the file — otherwise a save with
+        # no edits would "correct" out-of-range values and stop being a no-op.
+        if raw == str(current):
+            return
         try:
-            val = int(var.get().strip())
+            val = int(raw)
         except ValueError:
             var.set(str(current))
             return
-        val = max(0, min(val, Character.STAT_MAX))
+
+        floor = 1 if which == "level" else 0
+        ceiling = L.STAT_LIMIT if is_base_stat else self.LIMITS[which]
+        val = max(floor, min(val, ceiling))
 
         # Current HP/PP cannot exceed the maximum. Clamp here rather than
         # letting the model reject it, so typing a big number snaps to the
         # cap instead of throwing a dialog at the user.
         note = ""
         if which in ("hp", "pp"):
-            ceiling = getattr(ch, which + "_max")
-            if val > ceiling:
-                val, note = ceiling, f" (capped at {ch.name}'s maximum)"
+            cap = getattr(ch, which + "_max")
+            if val > cap:
+                val, note = cap, f" (capped at {ch.name}'s maximum)"
 
         if val == current:
             var.set(str(current))
             return
 
         def do(blk):
-            setattr(blk.character(self.char_id), which, val)
+            target = blk.character(self.char_id)
+            if is_base_stat:
+                target.set_stat(which, val)
+            else:
+                setattr(target, which, val)
 
-        label = {"hp": "HP", "pp": "PP",
-                 "hp_max": "max HP", "pp_max": "max PP"}[which]
+        label = self.LABELS.get(which, which)
         if not self.app.apply(do, f"{ch.name} {label} = {val}{note}"):
             var.set(str(current))
 
@@ -441,9 +503,13 @@ class EditorApp:
 
     def _slot_changed(self, _event=None) -> None:
         choice = self.slot_combo.get()
-        if choice:
-            self.slot = int(choice.split()[-1])
-            self.refresh()
+        if not choice:
+            return
+        # Flush before switching, or a value typed for this slot would be
+        # applied to the next one.
+        self.flush_pending()
+        self.slot = int(choice.split()[-1])
+        self.refresh()
 
     # --- file operations -----------------------------------------------------
 
@@ -490,9 +556,30 @@ class EditorApp:
         bak.write_bytes(path.read_bytes())
         return bak
 
+    def flush_pending(self) -> None:
+        """Apply edits still sitting in text boxes.
+
+        Entry widgets only commit on Return or focus-out, and clicking a menu
+        does neither — so "type a number, File > Save" silently saved the old
+        value. Anything that writes to disk has to flush first.
+        """
+        if not self.save:
+            return
+        # Snapshot every box before committing anything: each commit refreshes
+        # the whole window from the model, which would overwrite the boxes we
+        # have not read yet.
+        money = self.money.get()
+        typed = [pane.typed() for pane in self.panes]
+
+        self.money.set(money)
+        self._commit_money()
+        for pane, values in zip(self.panes, typed):
+            pane.flush(values)
+
     def write(self) -> None:
         if not self.save or not self.path:
             return
+        self.flush_pending()
         try:
             note = ""
             if self.path.exists():
@@ -527,6 +614,10 @@ class EditorApp:
         self.open(str(path))
 
     def _confirm_discard(self) -> bool:
+        # Flush first so the dirty flag accounts for anything typed but not
+        # yet committed; otherwise closing after typing a value reports no
+        # unsaved changes and drops it without asking.
+        self.flush_pending()
         if not self.dirty:
             return True
         return messagebox.askyesno(

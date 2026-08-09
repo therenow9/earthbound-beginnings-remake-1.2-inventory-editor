@@ -342,6 +342,78 @@ def test_swap_rejects_empty_slot(save):
         ch.swap_slots(0, L.INVENTORY_SIZE - 1)
 
 
+# --- level, experience and base stats ----------------------------------------
+
+def test_level_round_trips(save):
+    ch = save.populated[0].character(0)
+    ch.level = 42
+    assert ch.level == 42
+
+
+def test_level_is_bounded(save):
+    ch = save.populated[0].character(0)
+    for bad in (0, 100):
+        with pytest.raises(SaveError, match="level must be"):
+            ch.level = bad
+
+
+def test_exp_round_trips_across_the_full_range(save):
+    """Experience is u24 — the real save's 1050480 needs all three bytes."""
+    ch = save.populated[0].character(0)
+    for value in (0, 1050480, L.EXP_MAX):
+        ch.exp = value
+        assert ch.exp == value
+
+
+def test_exp_is_bounded(save):
+    ch = save.populated[0].character(0)
+    with pytest.raises(SaveError, match="experience must be"):
+        ch.exp = L.EXP_MAX + 1
+
+
+def test_exp_does_not_bleed_into_max_hp(save):
+    """EXP ends at 0x09 and max HP starts at 0x0B; a u32 write would collide."""
+    ch = save.populated[0].character(0)
+    before = ch.hp_max
+    ch.exp = L.EXP_MAX
+    assert ch.hp_max == before
+
+
+def test_level_and_exp_are_independent(save):
+    ch = save.populated[0].character(0)
+    ch.level = 7
+    ch.exp = 123456
+    assert (ch.level, ch.exp) == (7, 123456)
+
+
+def test_every_stat_round_trips_independently(save):
+    ch = save.populated[0].character(0)
+    for n, name in enumerate(L.STATS):
+        ch.set_stat(name, 100 + n)
+    assert ch.stats == {name: 100 + n for n, name in enumerate(L.STATS)}
+
+
+def test_stats_are_bounded(save):
+    ch = save.populated[0].character(0)
+    with pytest.raises(SaveError, match="0\\.\\.255"):
+        ch.set_stat("speed", 256)
+
+
+def test_unknown_stat_is_rejected(save):
+    ch = save.populated[0].character(0)
+    with pytest.raises(SaveError, match="unknown stat"):
+        ch.set_stat("charisma", 10)
+
+
+def test_stats_do_not_overlap_the_inventory(save):
+    """Stats end at 0x1C, inventory starts at 0x24."""
+    ch = save.populated[0].character(0)
+    before = ch.inventory
+    for name in L.STATS:
+        ch.set_stat(name, 255)
+    assert ch.inventory == before
+
+
 # --- equip slots accept only their own category ------------------------------
 #
 # The game sorts its Equip menu by the item-type field in the ROM and will not

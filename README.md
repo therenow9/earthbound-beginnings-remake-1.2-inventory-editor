@@ -15,13 +15,13 @@ downstream.)
 
 ## Status
 
-**Scope: inventory and equipment.** Not levels, stats, PSI, story flags or map
-warps — those need open-ended reverse engineering for little benefit. Items are
-the useful part and the part that is already understood.
+**Scope: inventory, equipment and character stats.** Not PSI, the melody
+counter, story flags or map warps — those are still unmapped, and guessing at
+them is how save editors corrupt files.
 
 Working: container handling (block detection, checksum validation and repair,
-mirror-copy consistency), character records, inventories, equipment, HP, PP and
-money — through a GUI or a CLI.
+mirror-copy consistency), character records, inventories, equipment, HP, PP,
+level, experience, the seven base stats, and money — through a GUI or a CLI.
 
 The item table is complete: all 253 named ids, read straight out of the ROM by
 [tools/extract_items.py](tools/extract_items.py). You supply your own ROM; the
@@ -57,8 +57,10 @@ ebbr-gui              # or: ebbr-gui save.srm
 
 Pick a save slot, pick a character, edit their bag. `Add…` opens a
 search-as-you-type item picker; `Remove` and the arrows reorder. Equipment is a
-dropdown per slot, listing only what that character is actually carrying. HP,
-PP and money are editable in place. A `.bak` is written on every save.
+dropdown per slot, listing only what that character is carrying *and* can wear
+there — a hamburger is never offered as a weapon. HP, PP, level, experience,
+the seven base stats and money are editable in place, with current HP/PP capped
+at their maxima. A `.bak` is written on every save.
 
 To build the standalone executable:
 
