@@ -19,6 +19,9 @@ downstream.)
 warps — those need open-ended reverse engineering for little benefit. Items are
 the useful part and the part that is already understood.
 
+**CLI only for now — a GUI is the next task.** See
+[docs/PLAN.md](docs/PLAN.md) Phase 5.
+
 Working: container handling (block detection, checksum validation and repair,
 mirror-copy consistency), character records, inventories, equipment, and a CLI.
 
@@ -26,9 +29,12 @@ The item table is complete: all 253 named ids, read straight out of the ROM by
 [tools/extract_items.py](tools/extract_items.py). You supply your own ROM; the
 repo ships names and ids only.
 
-**Not yet proven: writing.** Every read path is confirmed against real saves,
-but no edit has been round-tripped through the actual game yet. Treat `give`
-and `equip` as experimental until it has. See [docs/PLAN.md](docs/PLAN.md).
+**Editing is verified in the actual game.** `give`, `take`, `swap` and `equip`
+were applied to a real save, loaded in an emulator, and checked two ways: every
+character's live inventory in the game's RAM matched what was written, byte for
+byte, and the Goods menu showed the expected items with the equip markers still
+on the right ones. [tools/ingame_verify.py](tools/ingame_verify.py) re-runs that
+check on demand.
 
 ## Install
 
@@ -43,17 +49,32 @@ Python 3.10+. No required runtime dependencies.
 ## Use
 
 ```bash
-ebbr info save.srm                          # summarise slots, party, bags
-ebbr items                                  # list known item ids
-ebbr items pendant                          # search
-ebbr give save.srm Ninten "Goddess band"    # first free bag slot
-ebbr give save.srm Teddy 0xE6 --slot 3      # by id, specific slot
-ebbr equip save.srm Teddy weapon 0          # point weapon at bag slot 0
-ebbr diff a.srm 0 0 --file-b b.srm          # field-named byte diff
+ebbr info save.srm                            # summarise slots, party, bags
+ebbr items                                    # list every known item id
+ebbr items pendant                            # search
+
+ebbr give save.srm Ninten "Goddess band"      # append to the bag
+ebbr give save.srm Teddy 0xE6 --slot 3        # insert at slot 3, push the rest down
+ebbr take save.srm Ninten Hamburger           # remove by name...
+ebbr take save.srm Ninten 6                   # ...or by bag slot
+ebbr swap save.srm Ninten 0 3                 # reorder two slots
+
+ebbr equip save.srm Teddy weapon "Silver sword"
+ebbr unequip save.srm Teddy pendant
+
+ebbr diff a.srm 0 0 --file-b b.srm            # field-named byte diff
 ```
 
-`diff` translates offsets into field names where they are known, which is what
-makes mapping new fields tractable.
+Anywhere a bag slot is wanted you can give an item name instead of a number.
+Every editing command takes `-n`/`--dry-run` to show what would change without
+writing, `--save-slot` to pick a save slot other than the first, and writes a
+`.bak` beside the file unless you pass `--no-backup`.
+
+Bags stay contiguous the way the game keeps them: `give --slot` inserts and
+pushes the rest down rather than overwriting, `take` closes the gap, and both
+rewrite the equip pointers so equipped gear stays equipped. `diff` translates
+offsets into field names where they are known, which is what makes mapping new
+fields tractable.
 
 ## Finding your save
 
@@ -85,6 +106,32 @@ the geometry to literal measured values. The other layout tests build their
 fixtures *from* those constants, so they stay green even when the constants are
 wrong — which is exactly how the vanilla layout stayed broken through a fully
 passing suite.
+
+### Proving an edit works in the real game
+
+Tests cannot tell you the *game* accepts what was written.
+[tools/ingame_verify.py](tools/ingame_verify.py) can: it applies edits through
+the real CLI, injects the result into an emulator, loads the save, and compares
+each character's live inventory in the game's RAM against what we wrote.
+
+```bash
+export EBBR_BIZHAWK=/path/to/BizHawk        # or pass --bizhawk
+python tools/ingame_verify.py \
+    --rom "roms/remake/EarthBound Beginnings 1.2 (USA).sfc" \
+    --save "saves/remake/your.srm" \
+    --edit "take Ninten Hamburger" \
+    --edit "give Ninten 'Franklin badge'" \
+    --edit "swap Ninten 0 3"
+```
+
+Needs [BizHawk](https://tasvideos.org/BizHawk) for its Lua API; a window opens
+for a few seconds while it runs. It also drops screenshots of the Goods menu,
+which is worth a look — the automated check compares bytes, but only your eyes
+confirm the game *renders* what you meant.
+
+The save is injected straight into the emulator's SRAM rather than copied into
+BizHawk's save directory, so it neither depends on nor disturbs your emulator
+setup, and your real saves are never touched.
 
 ### Local ROMs and saves
 

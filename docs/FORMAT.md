@@ -132,15 +132,59 @@ markers.
 Bag position does not matter — the same item appears at different indices for
 different characters and equips correctly from any of them.
 
+### Bags are contiguous, and the game compacts them — VERIFIED
+
+There is never a hole. Items pack from slot 0; `00` only ever appears as
+trailing padding. Sixteen real bags (four characters × two saves × both
+mirrors) show no exceptions.
+
+When an item leaves, everything after it **shifts down one** and the equip
+pointers move to follow. Established from the two real saves without needing a
+controlled experiment: Ninten's Onyx hook (index 6) is gone in the later save,
+everything after it sits one slot earlier, and his weapon pointer moved
+`12 -> 11` to keep pointing at Hank's bat.
+
+This is why `add_item` inserts rather than overwriting and why `remove_item`
+compacts: writing into an arbitrary slot would produce a bag shape the game
+never creates.
+
+There is **no item-count field**. If one existed it would have changed for
+Ninten, Lloyd and Teddy (whose bag sizes changed between the two saves) but
+not for Ana (whose did not), and no byte in the record behaves that way.
+
+### Menu fill order is row-major — VERIFIED IN GAME
+
+Left column, then right column, then next row. Previously inferred from
+duplicate-item positions, which the notes correctly flagged as ambiguous.
+Settled by injecting a known item into a known slot and photographing the
+Goods menu: slot 13 rendered bottom-right, and slots 0 and 3 swapped places
+on screen exactly as the byte swap predicted.
+
+## Live inventory in WRAM — VERIFIED
+
+Loading a save copies each character's bag into work RAM. Useful for
+verification, not needed for editing:
+
+| character | WRAM address |
+|---|---|
+| Ninten | `0x099F1` |
+| Ana | `0x09A50` |
+| Lloyd | `0x09AAF` |
+| Teddy | `0x09B0E` |
+
+Stride `0x5F` — the same as the SRAM character record stride. Addresses are
+for BizHawk's `WRAM` domain and were located by searching for each bag's byte
+signature; `tools/ingame_verify.py` re-finds them by signature rather than
+trusting these, so they are documentation rather than load-bearing constants.
+
+Equip pointers survive bag edits correctly: after a remove, an insert and a
+swap, the on-screen `E` markers still sat on the intended items. That is the
+strongest check available on the pointer-fixup logic.
+
 The three pendants on sequential ids (`0x39`, `0x3A`, `0x3B`) turned out to be
 **Rain**, **Flame** and **Earth** — elemental, not character-specific. That
 removes the only reason to suspect pendants are character-restricted; the ids
 were originally named after whoever happened to be wearing them.
-
-Menu fill order is **row-major**: left column, right column, next row. Confirmed
-by matching duplicate-item positions against screenshots in two saves. Note that
-a 13-item bag leaves its gap at bottom-right under *either* ordering, so the gap
-alone does not disambiguate.
 
 ## Unmapped
 

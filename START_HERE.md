@@ -4,40 +4,63 @@
 
 ```bash
 pip install -e ".[dev]"
-pytest                       # expect 63 passed
+pytest                       # expect 90 passed
 ```
 
-Reading a save needs nothing else. Regenerating the item table needs a ROM:
-
-```bash
-python tools/extract_items.py "roms/remake/<your rom>.sfc" \
-    --compare "roms/vanilla/EarthBound (USA).sfc"
-```
-
-`data/items.json` is committed, so this is only necessary for a different
-remake build.
+Tests need no ROM and no save. The ones that want a real save skip themselves
+when `saves/remake/` is empty.
 
 ## Where things stand
 
-Reading is done and confirmed against real saves — container geometry, both
-layouts, character records, inventories, equipment, and all 253 item names.
-`ebbr info` on a real remake save resolves every item with no `unknown 0x..`.
+**Inventory editing works and is verified in the real game.** `give`, `take`,
+`swap`, `equip` and `unequip` were applied to a real save, loaded in an
+emulator, and confirmed two ways: every character's live inventory in the
+game's RAM matched what was written byte for byte, and the Goods menu rendered
+the expected items with the equip markers still on the right ones.
 
-**Writing has never been proven.** No edit has been round-tripped through the
-game. That is the next task, and nothing should be called v1 until it is done:
+Re-run that check any time:
 
 ```bash
-ebbr give <save> Ninten "Magic coin"
+EBBR_BIZHAWK=/path/to/BizHawk python tools/ingame_verify.py \
+    --rom "roms/remake/<rom>.sfc" --save "saves/remake/<save>.srm" \
+    --edit "give Ninten 'Franklin badge'"
 ```
 
-then load the save in bsnes and confirm the item is actually there. If it is
-not, suspect the mirror-copy handling in `SaveFile.edit_slot()` first.
+The item table is complete: 253 ids read out of the ROM. `data/items.json` is
+committed, so regenerate only for a different build:
 
-Also wanted: **a save taken after taking damage.** Every save examined so far is
-at full health, so `hp_max`/`pp_max` at `0x48`/`0x4E` cannot be distinguished
-from current HP/PP and remain INFERRED.
+```bash
+python tools/extract_items.py "roms/remake/<rom>.sfc" \
+    --compare "roms/vanilla/EarthBound (USA).sfc"
+```
 
-Read `docs/PLAN.md` for the roadmap and `docs/FORMAT.md` for the format.
+## Next task: the GUI
+
+The engine is done and verified; the remaining gap is that editing a bag from
+a command line is tedious. Scope stays inventory and equipment. Full notes in
+`docs/PLAN.md` under **Phase 5**, but the one thing to get right:
+
+**Build on `Character` in `src/ebbr/sram.py`** — `add_item`, `remove_item`,
+`swap_slots`, `equip_pointers` — and save through `SaveFile.edit_slot()`.
+Bag contiguity, equip-pointer fixup and mirror-copy consistency are enforced
+inside those, so a GUI that uses them gets correct behaviour for free and one
+that writes `Character.inventory` directly quietly loses all three. The CLI is
+a thin shell over exactly those calls; copy its shape.
+
+Then check the result with `tools/ingame_verify.py`, which does not care
+whether a CLI or a GUI produced the file.
+
+## What is deliberately not done
+
+Levels, EXP, stats, PSI, story flags and map position are unmapped and out of
+scope — see `docs/PLAN.md`. Money is decoded and confirmed but not editable.
+
+Two loose ends worth picking up:
+
+- `hp_max`/`pp_max` (`0x48`/`0x4E`) are still INFERRED, because every save seen
+  so far is at full health, making current and max indistinguishable. **One
+  save taken after taking damage settles it.**
+- Whatever differs between mirror copies A and B is still unidentified.
 
 ## Rules that matter
 
@@ -51,7 +74,11 @@ Read `docs/PLAN.md` for the roadmap and `docs/FORMAT.md` for the format.
 3. **Never trust an item table that has not passed
    `items.check_against_known()`.** A base off by one record decodes to 253
    real item names, just the wrong ones. It looks completely correct.
-4. **Never commit ROMs, patches, or personal saves.** `.gitignore` blocks
+4. **Keep bags contiguous.** The game never leaves a hole, and compacts when an
+   item leaves, rewriting equip pointers to follow. Any new editing operation
+   must preserve both; `test_bag_stays_contiguous_through_random_edits` is the
+   guard.
+5. **Never commit ROMs, patches, or personal saves.** `.gitignore` blocks
    `roms/` and `saves/` wholesale; leave those entries alone.
 
 ## Layout of local game data

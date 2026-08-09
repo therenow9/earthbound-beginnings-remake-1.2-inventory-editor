@@ -253,10 +253,114 @@ def test_add_item_rejects_full_bag(save):
         ch.add_item(0x19)
 
 
-def test_add_item_rejects_occupied_slot(save):
+def test_add_item_at_slot_inserts_rather_than_overwriting(save):
+    """`--slot` means "put it here", not "write over whatever is here"."""
     ch = save.populated[0].character(0)
-    with pytest.raises(SaveError, match="already holds"):
-        ch.add_item(0x53, slot=0)
+    before = ch.inventory
+    ch.add_item(0x53, slot=0)
+    assert ch.inventory[0] == 0x53
+    assert ch.inventory[1:] == before[:-1]      # everything pushed down one
+
+
+def test_add_item_rejects_a_slot_that_would_leave_a_gap(save):
+    """Bags are contiguous in every real save; refuse to invent a hole."""
+    ch = save.populated[0].character(0)
+    for i in range(ch.item_count):
+        ch.remove_item(0)
+    ch.add_item(0x53)
+    with pytest.raises(SaveError, match="gap"):
+        ch.add_item(0x19, slot=5)
+
+
+# --- removal, compaction, and equip-pointer maintenance ----------------------
+#
+# The game compacts bags when an item leaves and rewrites equip pointers to
+# follow. Verified against two real saves: dropping Onyx hook from index 6 of
+# Ninten's bag shifted everything after it down one, and moved his weapon
+# pointer 12 -> 11 to keep pointing at Hank's bat.
+
+def test_remove_item_compacts_the_bag(save):
+    ch = save.populated[0].character(0)
+    before = ch.inventory
+    ch.remove_item(3)
+    assert ch.inventory == before[:3] + before[4:] + [0]
+
+
+def test_remove_item_shifts_equip_pointers_down(save):
+    ch = save.populated[0].character(0)
+    ch.equip_pointers = [5, 0, 0, 0]            # weapon <- bag slot 4
+    equipped = ch.inventory[4]
+    ch.remove_item(1)                           # before it, so it shifts
+    assert ch.equip_pointers[0] == 4
+    assert ch.equipment["weapon"] == equipped
+
+
+def test_remove_item_unequips_what_it_removed(save):
+    ch = save.populated[0].character(0)
+    ch.equip_pointers = [3, 0, 0, 0]
+    ch.remove_item(2)                           # the equipped slot itself
+    assert ch.equip_pointers[0] == 0
+    assert ch.equipment["weapon"] is None
+
+
+def test_remove_item_leaves_earlier_pointers_alone(save):
+    ch = save.populated[0].character(0)
+    ch.equip_pointers = [1, 0, 0, 0]
+    ch.remove_item(5)                           # after it
+    assert ch.equip_pointers[0] == 1
+
+
+def test_remove_rejects_empty_slot(save):
+    ch = save.populated[0].character(0)
+    with pytest.raises(SaveError, match="already empty"):
+        ch.remove_item(L.INVENTORY_SIZE - 1)
+
+
+def test_add_item_shifts_pointers_up(save):
+    ch = save.populated[0].character(0)
+    ch.remove_item(0)                           # make room
+    ch.equip_pointers = [4, 0, 0, 0]
+    equipped = ch.inventory[3]
+    ch.add_item(0x53, slot=0)
+    assert ch.equip_pointers[0] == 5
+    assert ch.equipment["weapon"] == equipped
+
+
+def test_swap_carries_equip_pointers(save):
+    ch = save.populated[0].character(0)
+    ch.equip_pointers = [1, 0, 0, 0]
+    equipped = ch.inventory[0]
+    ch.swap_slots(0, 4)
+    assert ch.inventory[4] == equipped
+    assert ch.equip_pointers[0] == 5
+    assert ch.equipment["weapon"] == equipped
+
+
+def test_swap_rejects_empty_slot(save):
+    ch = save.populated[0].character(0)
+    with pytest.raises(SaveError, match="empty"):
+        ch.swap_slots(0, L.INVENTORY_SIZE - 1)
+
+
+def test_bag_stays_contiguous_through_random_edits(save):
+    """The invariant the game maintains; every operation must preserve it."""
+    rng = random.Random(7)
+    ch = save.populated[0].character(0)
+    for _ in range(60):
+        inv = ch.inventory
+        n = ch.item_count
+        op = rng.choice(["add", "take", "swap"])
+        if op == "add" and n < L.INVENTORY_SIZE:
+            ch.add_item(0x53, slot=rng.randrange(0, n + 1))
+        elif op == "take" and n:
+            ch.remove_item(rng.randrange(0, n))
+        elif op == "swap" and n >= 2:
+            ch.swap_slots(rng.randrange(0, n), rng.randrange(0, n))
+        inv = ch.inventory
+        filled = [i for i, v in enumerate(inv) if v]
+        assert filled == list(range(len(filled))), f"hole in bag: {inv}"
+        for p in ch.equip_pointers:
+            assert p == 0 or inv[p - 1] != 0, "pointer into an empty slot"
 
 
 def test_edit_slot_updates_both_mirrors(img):

@@ -18,14 +18,19 @@ not require replicating anything else those tools do.
 **Done.** Container layer: block detection by signature scan, layout detection,
 checksum validation and repair, mirror-copy consistency, automatic backups.
 Character records, inventories, equipment pointers. CLI: `info`, `items`,
-`give`, `equip`, `diff`. 63 tests, no ROM or personal save data required.
+`give`, `take`, `swap`, `equip`, `unequip`, `diff`. 90 tests, no ROM or
+personal save data required.
 
 **Item table: done.** All 253 named ids, extracted from the ROM. `ebbr info`
 now resolves every item in the test saves with no `unknown 0x..` left.
 
-**Next:** Phase 3 usability, then release. **Optional:** GUI.
+**In-game verified.** Edits made by the tool load correctly in the real game;
+`tools/ingame_verify.py` re-runs the check. Inventory editing is done.
 
-## Phase 1 — validate against real saves — DONE (partly)
+**Next: the GUI (Phase 5).** The engine is finished and proven — what is left
+is that driving it from a command line is not how anyone wants to edit a bag.
+
+## Phase 1 — validate against real saves — DONE
 
 Ran `ebbr info` against two real remake saves and one real stock EarthBound
 save. Results:
@@ -36,11 +41,13 @@ save. Results:
   entirely. Vanilla's header layout is identical to EBBR's; only stride and
   length differ. Fixed, and pinned by `test_layout_constants_match_real_saves`.
 
-**Still outstanding:** the write round-trip. Edit a save, load it in bsnes,
-confirm the change appears in-game. Nothing below is trustworthy for real use
-until that is done once — every read path is now confirmed, no write path is.
+- The write round-trip is done, and automated rather than manual.
+  `tools/ingame_verify.py` injects an edited save into BizHawk, loads it, and
+  compares every character's live inventory in WRAM against what was written.
+  A compound edit (take + give + swap + equip across two characters) came back
+  byte-exact on all four bags, with the Goods menu rendering correctly.
 
-Also still wanted: a save taken **after taking damage**, which would settle
+Still wanted: a save taken **after taking damage**, which would settle
 `hp_max`/`pp_max` (currently INFERRED — every save so far is at full health).
 
 ## Phase 2 — item table — DONE
@@ -64,9 +71,12 @@ on any mismatch. This is not a formality: a base off by one record yields 253
 Stock EarthBound stores its table at the same base and stride; 128 of 253
 entries differ. `--compare` emits that diff.
 
-## Phase 3 — usability
+## Phase 3 — usability — MOSTLY DONE
 
-- `ebbr take` to remove an item; `ebbr swap` to reorder slots.
+- `ebbr take` and `ebbr swap` exist, as do `unequip` and `--dry-run`, and any
+  bag slot can be given as an item name instead of a number. Both editing
+  operations maintain the two invariants the game maintains: bags stay
+  contiguous, and equip pointers follow the items they point at.
 - Warn when giving a character an item type they may not be able to equip.
   The pendant-restriction theory is **dead**: `0x39`/`0x3A`/`0x3B` are Rain,
   Flame and Earth pendants — elemental, not per-character. They only looked
@@ -76,6 +86,49 @@ entries differ. `--compare` emits that diff.
 - Better errors for the two failure modes that actually bite people: a vanilla
   save loaded by mistake, and a blank SRAM caused by a ROM/filename mismatch.
   The first is now correctly detected and refused rather than erroring out.
+
+## Phase 5 — GUI — NEXT
+
+The one thing standing between this and something pleasant to use. Scope stays
+inventory and equipment: open a save, see the four bags, move items around,
+save.
+
+**Build it on the existing model, not beside it.** Everything the GUI needs is
+already on `Character` in `src/ebbr/sram.py`:
+
+| want | call |
+|---|---|
+| add | `add_item(item_id, slot=None)` |
+| remove | `remove_item(slot)` |
+| reorder | `swap_slots(a, b)` |
+| equip | `equip_pointers` |
+| look up | `items.name()` / `items.find()` |
+
+This matters more than it sounds. Bag contiguity and equip-pointer fixup are
+enforced *inside* those methods, so a GUI that calls them inherits correct
+behaviour, while one that assigns to `Character.inventory` directly silently
+loses both. The CLI is a thin shell over the same calls — copy its shape.
+
+Two rules a GUI must not skip:
+
+1. **Write through `SaveFile.edit_slot()`.** It applies the change to both
+   mirror copies and re-checksums each. Writing a block directly produces a
+   file that half-loads.
+2. **Back up before saving**, as `cli._backup()` does.
+
+Suggested shape:
+
+- tkinter. It is in the stdlib, which keeps the zero-dependency promise; a
+  four-column list of bags with add/remove/reorder does not need more.
+- Call `items.load_default()` once at startup, as the CLI does.
+- A searchable item picker matters: there are 253 ids and the names collide
+  ("bat" matches 15). Reuse `items.find()` and the exact-match rule in
+  `cli._resolve_item()`.
+- Refuse non-EBBR saves up front — `cli._load_editable()` already does this.
+
+Verify GUI edits the same way as CLI edits: save, then run
+`tools/ingame_verify.py` against the result. It compares the game's live
+inventory, so it does not care which front end produced the file.
 
 ## Phase 4 — release
 

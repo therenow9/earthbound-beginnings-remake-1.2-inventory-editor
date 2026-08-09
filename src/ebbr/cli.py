@@ -91,34 +91,97 @@ def _describe_offset(off: int) -> str:
     return ""
 
 
-def cmd_give(args) -> int:
-    path = Path(args.file)
+def _load_editable(path: Path) -> SaveFile:
+    """Load a save, refusing anything this tool must not write to."""
     s = SaveFile.load(path)
     if s.layout is not L.EBBR:
-        print("refusing: not an EBBR save", file=sys.stderr)
-        return 1
+        raise SystemExit(
+            f"refusing to edit: {path.name} is a {s.layout.name} save, not "
+            f"the remake. Writing remake geometry to it would corrupt it.")
+    return s
 
-    cid = _resolve_char(args.character)
-    item_id = _resolve_item(args.item)
 
-    def edit(blk):
-        ch = blk.character(cid)
-        slot = ch.add_item(item_id, args.slot)
-        edit.slot = slot
+def _write(s: SaveFile, path: Path, args) -> None:
+    """Back up and save, unless this is a dry run.
 
-    s.edit_slot(args.save_slot, edit)
-
+    On a dry run the caller still prints what it would have done; main() adds
+    the notice afterwards, so the summary reads as a prediction rather than
+    being contradicted by a "nothing written" line above it.
+    """
+    if getattr(args, "dry_run", False):
+        return
     if not args.no_backup:
         print(f"backup: {_backup(path)}")
     s.save(path)
+
+
+def cmd_give(args) -> int:
+    path = Path(args.file)
+    s = _load_editable(path)
+    cid = _resolve_char(args.character)
+    item_id = _resolve_item(args.item)
+    used = {}
+
+    def edit(blk):
+        used["slot"] = blk.character(cid).add_item(item_id, args.slot)
+
+    s.edit_slot(args.save_slot, edit)
+    _write(s, path, args)
     print(f"gave {items.name(item_id)} (0x{item_id:02X}) to "
-          f"{L.CHARACTERS[cid]} in bag slot {edit.slot}")
+          f"{L.CHARACTERS[cid]} in bag slot {used['slot']}")
     return 0
 
 
-def cmd_equip(args) -> int:
+def _resolve_bag_slot(ch, token: str) -> int:
+    """A bag slot given either as an index or as the name of an item in it."""
+    if token.isdigit():
+        return int(token)
+    item_id = _resolve_item(token)
+    slot = ch.find_item(item_id)
+    if slot is None:
+        raise SystemExit(
+            f"{ch.name} is not carrying {items.name(item_id)} "
+            f"(0x{item_id:02X})")
+    return slot
+
+
+def cmd_take(args) -> int:
     path = Path(args.file)
-    s = SaveFile.load(path)
+    s = _load_editable(path)
+    cid = _resolve_char(args.character)
+    taken = {}
+
+    def edit(blk):
+        ch = blk.character(cid)
+        slot = _resolve_bag_slot(ch, args.item)
+        taken["id"] = ch.remove_item(slot)
+        taken["slot"] = slot
+
+    s.edit_slot(args.save_slot, edit)
+    _write(s, path, args)
+    print(f"took {items.name(taken['id'])} (0x{taken['id']:02X}) from "
+          f"{L.CHARACTERS[cid]} bag slot {taken['slot']}")
+    return 0
+
+
+def cmd_swap(args) -> int:
+    path = Path(args.file)
+    s = _load_editable(path)
+    cid = _resolve_char(args.character)
+
+    def edit(blk):
+        ch = blk.character(cid)
+        ch.swap_slots(_resolve_bag_slot(ch, args.a), _resolve_bag_slot(ch, args.b))
+
+    s.edit_slot(args.save_slot, edit)
+    _write(s, path, args)
+    print(f"swapped {L.CHARACTERS[cid]}'s bag slots {args.a} and {args.b}")
+    return 0
+
+
+def cmd_unequip(args) -> int:
+    path = Path(args.file)
+    s = _load_editable(path)
     cid = _resolve_char(args.character)
     if args.slot_name not in L.EQUIP_SLOTS:
         print(f"slot must be one of {', '.join(L.EQUIP_SLOTS)}", file=sys.stderr)
@@ -127,18 +190,42 @@ def cmd_equip(args) -> int:
 
     def edit(blk):
         ch = blk.character(cid)
-        inv = ch.inventory
-        if not (0 <= args.bag_slot < L.INVENTORY_SIZE) or inv[args.bag_slot] == 0:
-            raise SaveError(f"bag slot {args.bag_slot} is empty")
         ptrs = ch.equip_pointers
-        ptrs[idx] = args.bag_slot + 1
+        ptrs[idx] = 0
         ch.equip_pointers = ptrs
 
     s.edit_slot(args.save_slot, edit)
-    if not args.no_backup:
-        print(f"backup: {_backup(path)}")
-    s.save(path)
-    print(f"equipped {L.CHARACTERS[cid]}'s {args.slot_name} from bag slot {args.bag_slot}")
+    _write(s, path, args)
+    print(f"unequipped {L.CHARACTERS[cid]}'s {args.slot_name}")
+    return 0
+
+
+def cmd_equip(args) -> int:
+    path = Path(args.file)
+    s = _load_editable(path)
+    cid = _resolve_char(args.character)
+    if args.slot_name not in L.EQUIP_SLOTS:
+        print(f"slot must be one of {', '.join(L.EQUIP_SLOTS)}", file=sys.stderr)
+        return 1
+    idx = L.EQUIP_SLOTS.index(args.slot_name)
+    used = {}
+
+    def edit(blk):
+        ch = blk.character(cid)
+        slot = _resolve_bag_slot(ch, args.bag_slot)
+        inv = ch.inventory
+        if not (0 <= slot < L.INVENTORY_SIZE) or inv[slot] == 0:
+            raise SaveError(f"bag slot {slot} is empty")
+        ptrs = ch.equip_pointers
+        ptrs[idx] = slot + 1
+        ch.equip_pointers = ptrs
+        used["slot"] = slot
+        used["id"] = inv[slot]
+
+    s.edit_slot(args.save_slot, edit)
+    _write(s, path, args)
+    print(f"equipped {L.CHARACTERS[cid]}'s {args.slot_name}: "
+          f"{items.name(used['id'])} from bag slot {used['slot']}")
     return 0
 
 
@@ -206,23 +293,40 @@ def main(argv=None) -> int:
     pd.add_argument("--limit", type=int, default=60)
     pd.set_defaults(func=cmd_diff)
 
-    pg = sub.add_parser("give", help="put an item in a character's bag")
-    pg.add_argument("file")
-    pg.add_argument("character")
+    def editing_parser(name, help_):
+        sp = sub.add_parser(name, help=help_)
+        sp.add_argument("file")
+        sp.add_argument("character", help="name or index, e.g. Ninten or 0")
+        sp.add_argument("--save-slot", type=int, default=0)
+        sp.add_argument("--no-backup", action="store_true")
+        sp.add_argument("-n", "--dry-run", action="store_true",
+                        help="report what would change, write nothing")
+        return sp
+
+    pg = editing_parser("give", "put an item in a character's bag")
     pg.add_argument("item", help="name or id, e.g. 'Goddess band' or 0xE5")
-    pg.add_argument("--slot", type=int, help="bag slot (default: first free)")
-    pg.add_argument("--save-slot", type=int, default=0)
-    pg.add_argument("--no-backup", action="store_true")
+    pg.add_argument("--slot", type=int,
+                    help="insert at this bag slot, pushing the rest down "
+                         "(default: append)")
     pg.set_defaults(func=cmd_give)
 
-    pe = sub.add_parser("equip", help="point an equip slot at a bag slot")
-    pe.add_argument("file")
-    pe.add_argument("character")
+    pk = editing_parser("take", "remove an item, closing the gap")
+    pk.add_argument("item", help="bag slot number, or the item's name")
+    pk.set_defaults(func=cmd_take)
+
+    pw = editing_parser("swap", "exchange two bag slots")
+    pw.add_argument("a", help="bag slot number, or item name")
+    pw.add_argument("b", help="bag slot number, or item name")
+    pw.set_defaults(func=cmd_swap)
+
+    pe = editing_parser("equip", "point an equip slot at a bag slot")
     pe.add_argument("slot_name", help=" | ".join(L.EQUIP_SLOTS))
-    pe.add_argument("bag_slot", type=int)
-    pe.add_argument("--save-slot", type=int, default=0)
-    pe.add_argument("--no-backup", action="store_true")
+    pe.add_argument("bag_slot", help="bag slot number, or item name")
     pe.set_defaults(func=cmd_equip)
+
+    pu = editing_parser("unequip", "clear an equip slot")
+    pu.add_argument("slot_name", help=" | ".join(L.EQUIP_SLOTS))
+    pu.set_defaults(func=cmd_unequip)
 
     pt = sub.add_parser("items", help="list known item ids")
     pt.add_argument("query", nargs="?")
@@ -231,10 +335,13 @@ def main(argv=None) -> int:
     args = p.parse_args(argv)
     items.load_default()   # data/items.json if present; harmless if not
     try:
-        return args.func(args)
+        rc = args.func(args)
     except SaveError as e:
         print(f"error: {e}", file=sys.stderr)
         return 1
+    if not rc and getattr(args, "dry_run", False):
+        print("(dry run — nothing was written)")
+    return rc
 
 
 if __name__ == "__main__":

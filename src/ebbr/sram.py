@@ -193,19 +193,98 @@ class Character:
                 raise ValueError(f"equip pointer {p} out of range")
         self.block.write(self.base + L.EQUIPMENT, bytes(ptrs))
 
+    @property
+    def item_count(self) -> int:
+        """Number of items held. Bags are contiguous, so this is also the
+        index of the first free slot."""
+        return sum(1 for v in self.inventory if v)
+
+    def _shift_pointers(self, fn) -> None:
+        """Rewrite equip pointers through fn(0-based index) -> new index|None.
+
+        Equip pointers are 1-based indices into the bag, so any structural
+        change to the bag has to move them in step or they end up pointing at
+        the wrong item. Confirmed against real saves: when the game dropped an
+        item from Ninten's bag, his weapon pointer moved 12 -> 11 to track it.
+        """
+        out = []
+        for p in self.equip_pointers:
+            if p == 0:
+                out.append(0)
+                continue
+            new = fn(p - 1)
+            # A pointer shifted off the end of the bag would be a dangling
+            # reference; drop it to "nothing equipped" instead.
+            if new is None or not 0 <= new < L.INVENTORY_SIZE:
+                out.append(0)
+            else:
+                out.append(new + 1)
+        self.equip_pointers = out
+
     def add_item(self, item_id: int, slot: int | None = None) -> int:
-        """Put an item in a free slot. Returns the slot used."""
+        """Insert an item, keeping the bag contiguous. Returns the slot used.
+
+        `slot` inserts at that position and pushes the rest down rather than
+        writing into a hole — the game never leaves holes (verified on eight
+        real bags), so producing one would be inventing a state it cannot.
+        """
         inv = self.inventory
+        count = self.item_count
+        if count >= L.INVENTORY_SIZE:
+            raise SaveError(f"{self.name}'s inventory is full")
         if slot is None:
-            free = [i for i, v in enumerate(inv) if v == 0]
-            if not free:
-                raise SaveError(f"{self.name}'s inventory is full")
-            slot = free[0]
-        elif inv[slot] != 0:
-            raise SaveError(f"slot {slot} already holds 0x{inv[slot]:02X}")
-        inv[slot] = item_id
-        self.inventory = inv
+            slot = count
+        elif not 0 <= slot <= count:
+            raise SaveError(
+                f"slot {slot} would leave a gap; {self.name} has {count} "
+                f"item(s), so the last insertable slot is {count}")
+
+        inv = inv[:slot] + [item_id] + inv[slot:]
+        self.inventory = inv[:L.INVENTORY_SIZE]
+        self._shift_pointers(lambda i: i + 1 if i >= slot else i)
         return slot
+
+    def remove_item(self, slot: int) -> int:
+        """Remove the item at `slot`, closing the gap. Returns the item id.
+
+        Anything equipped from that slot becomes unequipped; anything after it
+        shifts down, and its pointer follows. This mirrors what the game does
+        when an item is used up.
+        """
+        inv = self.inventory
+        if not 0 <= slot < L.INVENTORY_SIZE:
+            raise SaveError(f"bag slot {slot} out of range")
+        removed = inv[slot]
+        if removed == 0:
+            raise SaveError(f"bag slot {slot} is already empty")
+
+        self.inventory = inv[:slot] + inv[slot + 1:] + [0]
+        self._shift_pointers(
+            lambda i: None if i == slot else (i - 1 if i > slot else i))
+        return removed
+
+    def swap_slots(self, a: int, b: int) -> None:
+        """Exchange two bag slots, carrying any equip pointers with them.
+
+        Both slots must hold something: swapping an item into an empty slot
+        past the end of the bag would leave a hole, which the game never does.
+        """
+        inv = self.inventory
+        for s in (a, b):
+            if not 0 <= s < L.INVENTORY_SIZE:
+                raise SaveError(f"bag slot {s} out of range")
+            if inv[s] == 0:
+                raise SaveError(f"bag slot {s} is empty; nothing to swap")
+        inv[a], inv[b] = inv[b], inv[a]
+        self.inventory = inv
+        self._shift_pointers(lambda i: b if i == a else (a if i == b else i))
+
+    def find_item(self, item_id: int) -> int | None:
+        """First bag slot holding this id, or None."""
+        for i, v in enumerate(self.inventory):
+            if v == item_id:
+                return i
+        return None
 
     def __repr__(self) -> str:
         return f"<Character {self.name} HP {self.hp}/{self.hp_max}>"
