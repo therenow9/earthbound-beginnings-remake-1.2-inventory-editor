@@ -13,9 +13,8 @@ for the remake specifically.
 
 **This is experimental software. It can and will break saves.**
 
-Not "might, in theory". Editing a save file means writing bytes into a game
-that was never designed to be edited, and there are things in there nobody has
-figured out yet. Sooner or later something will go wrong for somebody.
+Editing a save file means writing bytes into a game that was never designed to
+be edited. Do so with caution, and at your own risk.
 
 **So: back up your save before you touch it.**
 
@@ -30,7 +29,7 @@ using this on it.
 
 That's the version this was built and tested against. Other versions may work
 fine, or may not — nobody has tried. The item list was read out of a v1.2 ROM,
-so on a different version the item *names* could be wrong even if the editing
+so on a different version the item _names_ could be wrong even if the editing
 works, which would be a confusing way to lose a save. If you're on something
 else, be extra careful and definitely keep that backup.
 
@@ -194,13 +193,13 @@ difference between a bug that gets fixed and one that gets guessed at.
 **The good news is you probably already have the "before" file.** Every time
 the editor saves, it writes a backup next to your save with `.bak` on the end —
 `EBBR.srm.bak`, or `.bak1`, `.bak2` and so on if there are several. That
-backup is your save as it was *before* that edit. So:
+backup is your save as it was _before_ that edit. So:
 
 - **before** → the `.bak` file (or your own backup copy)
 - **after** → the `.srm` itself
 
 Attach both. If the problem showed up in the game rather than in the editor,
-the most useful "after" is a save made *in game* once things had gone wrong.
+the most useful "after" is a save made _in game_ once things had gone wrong.
 
 Copy in the exact error message if you saw one.
 
@@ -230,10 +229,6 @@ roughly as it is.
 - PSI, melodies, map position
 - Level editing that also works out your stats for you
 
-Those first ones aren't understood well enough to touch safely, and the last
-would mean recreating the game's internal stat maths, which isn't stored
-anywhere in the ROM to copy from.
-
 **Minor bugs will get looked at.** Beyond that, please treat this as finished
 rather than something actively being developed. Feature requests probably
 won't go anywhere, and that's not rudeness — it's just the honest answer.
@@ -251,23 +246,20 @@ So please:
 
 - **Don't report problems with this editor to them.** Bugs belong in the issue
   tracker linked above, not with the remake's developers.
-- **Don't blame them if it breaks your save.** That would be on me, and on
-  the fact that you were warned it might.
+- **Don't blame them if it breaks your save.** That would be on me, but mostly
+  on you, considering the fact that you were warned it might.
 - Don't treat anything here as official information about the remake.
 
 ### A genuine thank you
 
-None of the above is a complaint — the opposite, really.
+The EarthBound Beginnings Remake is an incredible piece of work. Rebuilding
+Mother 1 inside EarthBound's engine is an enormous undertaking, and the care
+that has gone into it shows everywhere. Huge thanks to Gabbls, livvy94 and
+everyone else who has put time into the project, and to Clyde "Tomato"
+Mandelin, whose work it builds on.
 
-EarthBound Beginnings Remake is an incredible piece of work. Rebuilding Mother
-1 inside EarthBound's engine is an enormous undertaking, and the care that has
-gone into it shows everywhere. Huge thanks to Gabbls, livvy94 and everyone else
-who has put time into the project, and to Clyde "Tomato" Mandelin, whose work
-it builds on.
-
-I only made this editor because I enjoyed the remake enough to want to poke
-around inside it. It exists because of their work, and I really do appreciate
-all of it.
+I only made this editor as a project for myself to help modify my save data,
+and I am posting it here to share it with the community.
 
 Thanks also to
 [Oh Mother](https://github.com/clickysteve/Oh-Mother-Earthbound-Save-File-Editor)
