@@ -174,6 +174,48 @@ class Block:
         off = L.NAME_TABLE + L.NAME_STRIDE * char_id
         return L.decode_text(self.read(off, L.NAME_STRIDE))
 
+    # --- names and favourites ------------------------------------------------
+
+    def _write_text(self, off: int, size: int, value: str, what: str) -> bytes:
+        try:
+            raw = L.encode_text(value, size)
+        except ValueError as e:
+            raise SaveError(f"{what}: {e}") from None
+        self.write(off, raw)
+        return raw
+
+    def set_name(self, char_id: int, value: str) -> None:
+        """Rename a character. Verified in-game: the new name shows on the
+        Status screen and in the party box."""
+        if not 0 <= char_id < L.CHAR_COUNT:
+            raise SaveError(f"no character {char_id}")
+        self._write_text(L.NAME_TABLE + L.NAME_STRIDE * char_id,
+                         L.NAME_STRIDE, value,
+                         f"{L.CHARACTERS[char_id]}'s name")
+
+    @property
+    def player_name(self) -> str:
+        """The player's own name. Empty on a save from before the game asks
+        for it, which it only does partway through."""
+        return L.decode_text(self.read(L.PLAYER_NAME, L.PLAYER_NAME_SIZE))
+
+    @player_name.setter
+    def player_name(self, value: str) -> None:
+        raw = self._write_text(L.PLAYER_NAME, L.PLAYER_NAME_SIZE, value,
+                               "player name")
+        # Second copy, always — the format keeps two, as it does for HP.
+        self.write(L.PLAYER_NAME_ALT, raw)
+
+    @property
+    def favourite_food(self) -> str:
+        return L.decode_text(self.read(L.FAVOURITE_FOOD,
+                                       L.FAVOURITE_FOOD_SIZE))
+
+    @favourite_food.setter
+    def favourite_food(self, value: str) -> None:
+        self._write_text(L.FAVOURITE_FOOD, L.FAVOURITE_FOOD_SIZE, value,
+                         "favourite food")
+
     def character(self, char_id: int) -> "Character":
         return Character(self, char_id)
 

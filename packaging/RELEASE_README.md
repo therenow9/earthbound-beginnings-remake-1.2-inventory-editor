@@ -61,6 +61,8 @@ playthrough you'd be upset to lose.
 - Change **level, EXP and stats**
 - Change **money**
 - Add, remove and **reorder party members**
+- Rename **party members**
+- Set the **player name** and the **favourite food**
 - Works on any of your three save slots
 
 ## What it can't do
@@ -146,6 +148,12 @@ The position is shown next to them ("position 2 of 4").
 
 **HP and PP** have two boxes each: current, then maximum. Current can't go above
 maximum, so raise the maximum first if you want a big number.
+
+**Names** — each character has a Name box on their tab (up to 7 letters). Your
+own player name and your favourite food are in the bar at the top.
+
+Only ordinary letters, numbers and punctuation work. Accents and emoji can't be
+drawn by the game, so the editor won't let you save them.
 
 ---
 

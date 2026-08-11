@@ -64,6 +64,32 @@ KNOWN_LAYOUTS = (EBBR, VANILLA)
 
 # --- fields within the data section -----------------------------------------
 
+#: The player's own name — the one the game asks for partway through, not a
+#: character name. Stored twice, like HP is; both copies must be written.
+#: VERIFIED: the remake keeps these at the same block-relative offsets vanilla
+#: EarthBound does, where the same two slots hold the EB player name.
+PLAYER_NAME = 0x000
+PLAYER_NAME_ALT = 0x00C
+PLAYER_NAME_SIZE = 12
+
+#: Favourite homemade food, asked for at the start.
+#:
+#: Vanilla EarthBound splits this region: a 6-byte favourite food at 0x2A and
+#: a favourite *thing* at 0x30 that becomes a PSI attack name. The remake has
+#: no favourite thing, and writes longer food names straight through the
+#: boundary — a real save holds the 9-character "Prime Rib" running 0x2A..0x32.
+#: So it is treated as one field here.
+#:
+#: The width is capped short of MONEY at 0x3C so an over-long name can never
+#: reach it. 9 characters is confirmed working because the game itself wrote
+#: one; the engine's true entry limit is not known.
+FAVOURITE_FOOD = 0x02A
+FAVOURITE_FOOD_SIZE = 12
+
+#: EarthBound's pet name lives at 0x24 and is all zeros in every remake save —
+#: the remake never asks you to name a dog. Recorded so nobody maps it again;
+#: deliberately not exposed, since editing it would do nothing.
+
 MONEY = 0x3C            # u32 LE
 PARTY_ROSTER = 0x7A     # 1-based character ids, 0x00 terminated, max 4
 NAME_TABLE = 0x513      # 4 entries
@@ -166,8 +192,33 @@ def decode_text(raw: bytes) -> str:
     return "".join(out)
 
 
+#: Encodable range. The bias maps ASCII 0x20..0x7E onto 0x50..0xAE; anything
+#: outside it has no representation the game can draw.
+TEXT_MIN = 0x20
+TEXT_MAX = 0x7E
+
+
+def encodable(s: str) -> str | None:
+    """The first character that cannot be encoded, or None if all can."""
+    for c in s:
+        if not TEXT_MIN <= ord(c) <= TEXT_MAX:
+            return c
+    return None
+
+
 def encode_text(s: str, length: int) -> bytes:
-    """Encode to EB text, zero-padded to length. Raises if it will not fit."""
+    """Encode to EB text, zero-padded to length. Raises if it will not fit.
+
+    Rejects characters outside the encodable range by name rather than letting
+    them through: `ord(c) + TEXT_BIAS` on, say, an accented letter either
+    overflows a byte and raises something opaque, or silently writes a glyph
+    the game will draw as garbage.
+    """
     if len(s) > length:
-        raise ValueError(f"{s!r} exceeds {length} characters")
+        raise ValueError(f"{s!r} is longer than {length} characters")
+    bad = encodable(s)
+    if bad is not None:
+        raise ValueError(
+            f"{bad!r} cannot be written to a save; only plain ASCII "
+            f"characters (space through ~) can be displayed by the game")
     return bytes(ord(c) + TEXT_BIAS for c in s).ljust(length, b"\x00")

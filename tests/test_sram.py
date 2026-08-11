@@ -342,6 +342,80 @@ def test_swap_rejects_empty_slot(save):
         ch.swap_slots(0, L.INVENTORY_SIZE - 1)
 
 
+# --- names and the favourite food --------------------------------------------
+
+def test_character_name_round_trips(save):
+    blk = save.populated[0]
+    blk.set_name(0, "Jeff")
+    assert blk.name(0) == "Jeff"
+
+
+def test_renaming_one_character_leaves_the_others(save):
+    blk = save.populated[0]
+    others = [blk.name(c) for c in range(1, L.CHAR_COUNT)]
+    blk.set_name(0, "Zippy")
+    assert [blk.name(c) for c in range(1, L.CHAR_COUNT)] == others
+
+
+def test_a_shorter_name_clears_the_old_one(save):
+    """Zero padding matters: 'Ninten' -> 'Ann' must not leave 'Annten'."""
+    blk = save.populated[0]
+    blk.set_name(0, "Abcdefg")
+    blk.set_name(0, "Ann")
+    assert blk.name(0) == "Ann"
+
+
+def test_name_too_long_is_refused(save):
+    blk = save.populated[0]
+    with pytest.raises(SaveError, match="longer than 7"):
+        blk.set_name(0, "Bartholomew")
+
+
+def test_player_name_writes_both_copies(save):
+    blk = save.populated[0]
+    blk.player_name = "Jeremy"
+    assert blk.player_name == "Jeremy"
+    # The format keeps two copies, as it does for HP; a stale one is a state
+    # the game never writes.
+    second = L.decode_text(blk.read(L.PLAYER_NAME_ALT, L.PLAYER_NAME_SIZE))
+    assert second == "Jeremy"
+
+
+def test_blank_player_name_reads_and_writes(save):
+    """The game only asks for this partway through, so a save can have none."""
+    blk = save.populated[0]
+    blk.player_name = ""
+    assert blk.player_name == ""
+    assert L.decode_text(blk.read(L.PLAYER_NAME_ALT, L.PLAYER_NAME_SIZE)) == ""
+
+
+def test_favourite_food_round_trips(save):
+    blk = save.populated[0]
+    blk.favourite_food = "Prime Rib"
+    assert blk.favourite_food == "Prime Rib"
+
+
+def test_favourite_food_does_not_reach_money(save):
+    """The field stops short of MONEY at 0x3C; a full-width name must not
+    spill into it."""
+    blk = save.populated[0]
+    before = blk.money
+    blk.favourite_food = "X" * L.FAVOURITE_FOOD_SIZE
+    assert blk.money == before
+
+
+def test_names_reject_characters_the_game_cannot_draw(save):
+    blk = save.populated[0]
+    for bad in ("Café", "naïve", "emoji \U0001F600"):
+        with pytest.raises(SaveError, match="cannot be written"):
+            blk.favourite_food = bad
+
+
+def test_encodable_finds_the_offending_character():
+    assert L.encodable("Steak") is None
+    assert L.encodable("Café") == "é"
+
+
 # --- party membership --------------------------------------------------------
 #
 # The roster is only half of it. An unrecruited character also carries an

@@ -113,6 +113,15 @@ class CharacterPane(ttk.Frame):
 
         membership = ttk.Frame(self)
         membership.pack(fill="x", pady=(0, 4))
+
+        ttk.Label(membership, text="Name").pack(side="left")
+        self.name_var = tk.StringVar()
+        name_entry = ttk.Entry(membership, textvariable=self.name_var,
+                               width=L.NAME_STRIDE + 2)
+        name_entry.pack(side="left", padx=(4, 14))
+        name_entry.bind("<FocusOut>", lambda _e: self._commit_name())
+        name_entry.bind("<Return>", lambda _e: self._commit_name())
+
         self.in_party = tk.BooleanVar()
         ttk.Checkbutton(membership, text="In the party",
                         variable=self.in_party,
@@ -203,6 +212,7 @@ class CharacterPane(ttk.Frame):
         if ch is None:
             return
         keep = self.listbox.curselection()
+        self.name_var.set(ch.name)
         party = self.app.block().party
         here = party.index(self.char_id) if self.char_id in party else None
         self.in_party.set(here is not None)
@@ -250,8 +260,30 @@ class CharacterPane(ttk.Frame):
         sel = self.listbox.curselection()
         return sel[0] if sel else None
 
+    def _commit_name(self) -> None:
+        blk = self.app.block()
+        if blk is None:
+            return
+        wanted = self.name_var.get().strip()
+        current = blk.name(self.char_id)
+        if wanted == current:
+            return
+        if not wanted:
+            self.name_var.set(current)
+            self.app.status("A character needs a name.")
+            return
+
+        def do(b):
+            b.set_name(self.char_id, wanted)
+
+        if not self.app.apply(
+                do, f"{L.CHARACTERS[self.char_id]} renamed to {wanted}"):
+            self.name_var.set(current)
+
     def typed(self) -> dict[str, str]:
-        return {which: var.get() for which, var in self.stat_vars.items()}
+        out = {which: var.get() for which, var in self.stat_vars.items()}
+        out["name"] = self.name_var.get()
+        return out
 
     def flush(self, typed: dict[str, str] | None = None) -> None:
         """Commit anything typed but not yet applied.
@@ -263,6 +295,8 @@ class CharacterPane(ttk.Frame):
         if self.character() is None:
             return
         typed = typed or self.typed()
+        self.name_var.set(typed["name"])
+        self._commit_name()
         # Maxima first: raising a maximum has to land before the current value
         # that depends on it, or current gets clamped against the old ceiling.
         order = ["hp_max", "pp_max", "hp", "pp", "level", "exp", *L.STATS]
@@ -489,10 +523,23 @@ class EditorApp:
 
         ttk.Label(top, text="Money $").pack(side="left")
         self.money = tk.StringVar()
-        money = ttk.Entry(top, textvariable=self.money, width=12)
-        money.pack(side="left", padx=4)
+        money = ttk.Entry(top, textvariable=self.money, width=10)
+        money.pack(side="left", padx=(4, 14))
         money.bind("<FocusOut>", lambda _e: self._commit_money())
         money.bind("<Return>", lambda _e: self._commit_money())
+
+        self.player_name = tk.StringVar()
+        self.favourite_food = tk.StringVar()
+        for label, var, width, commit in (
+                ("Player", self.player_name, L.PLAYER_NAME_SIZE + 2,
+                 self._commit_player_name),
+                ("Favourite food", self.favourite_food,
+                 L.FAVOURITE_FOOD_SIZE + 2, self._commit_food)):
+            ttk.Label(top, text=label).pack(side="left")
+            entry = ttk.Entry(top, textvariable=var, width=width)
+            entry.pack(side="left", padx=(4, 14))
+            entry.bind("<FocusOut>", lambda _e, c=commit: c())
+            entry.bind("<Return>", lambda _e, c=commit: c())
 
         self.tabs = ttk.Notebook(self.root, padding=8)
         self.tabs.pack(fill="both", expand=True)
@@ -560,13 +607,20 @@ class EditorApp:
         blk = self.block()
         if blk is None:
             self.money.set("")
+            self.player_name.set("")
+            self.favourite_food.set("")
             for pane in self.panes:
                 pane.listbox.delete(0, "end")
             return
         self.money.set(str(blk.money))
+        self.player_name.set(blk.player_name)
+        self.favourite_food.set(blk.favourite_food)
         party = set(blk.party)
         for cid, pane in enumerate(self.panes):
             pane.refresh()
+            # Tabs stay on the canonical names deliberately. They identify
+            # which character slot you are editing, so renaming Ninten to
+            # something else must not make the tab hard to find.
             label = L.CHARACTERS[cid]
             self.tabs.tab(cid, text=label if cid in party else f"{label} (—)")
 
@@ -587,6 +641,29 @@ class EditorApp:
 
         if not self.apply(do, f"money = ${val}"):
             self.money.set(str(blk.money))
+
+    def _commit_text(self, var: tk.StringVar, field: str, label: str) -> None:
+        """Commit one of the block-level text fields."""
+        blk = self.block()
+        if blk is None:
+            return
+        wanted = var.get().strip()
+        current = getattr(blk, field)
+        if wanted == current:
+            return
+
+        def do(b):
+            setattr(b, field, wanted)
+
+        if not self.apply(do, f"{label} = {wanted!r}"):
+            var.set(current)
+
+    def _commit_player_name(self) -> None:
+        self._commit_text(self.player_name, "player_name", "player name")
+
+    def _commit_food(self) -> None:
+        self._commit_text(self.favourite_food, "favourite_food",
+                          "favourite food")
 
     def _slot_changed(self, _event=None) -> None:
         choice = self.slot_combo.get()
@@ -656,10 +733,16 @@ class EditorApp:
         # the whole window from the model, which would overwrite the boxes we
         # have not read yet.
         money = self.money.get()
+        player = self.player_name.get()
+        food = self.favourite_food.get()
         typed = [pane.typed() for pane in self.panes]
 
         self.money.set(money)
         self._commit_money()
+        self.player_name.set(player)
+        self._commit_player_name()
+        self.favourite_food.set(food)
+        self._commit_food()
         for pane, values in zip(self.panes, typed):
             pane.flush(values)
 

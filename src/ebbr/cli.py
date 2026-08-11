@@ -268,6 +268,47 @@ def cmd_party(args) -> int:
     return 0
 
 
+def cmd_name(args) -> int:
+    path = Path(args.file)
+    s = _load_editable(path)
+    blk = s.slot(args.save_slot)[0]
+
+    if not (args.character or args.player or args.food):
+        print(f"  player name    {blk.player_name or '(not set yet)'}")
+        print(f"  favourite food {blk.favourite_food or '(not set)'}")
+        for cid in range(L.CHAR_COUNT):
+            print(f"  {L.CHARACTERS[cid]:<14} {blk.name(cid)}")
+        return 0
+
+    if args.character and args.new_name is None:
+        print("give the new name after the character", file=sys.stderr)
+        return 1
+
+    cid = _resolve_char(args.character) if args.character else None
+    changed = []
+
+    def edit(b):
+        if cid is not None:
+            b.set_name(cid, args.new_name)
+        if args.player is not None:
+            b.player_name = args.player
+        if args.food is not None:
+            b.favourite_food = args.food
+
+    s.edit_slot(args.save_slot, edit)
+    _write(s, path, args)
+
+    blk = s.slot(args.save_slot)[0]
+    if cid is not None:
+        changed.append(f"{L.CHARACTERS[cid]} is now {blk.name(cid)!r}")
+    if args.player is not None:
+        changed.append(f"player name {blk.player_name!r}")
+    if args.food is not None:
+        changed.append(f"favourite food {blk.favourite_food!r}")
+    print("; ".join(changed))
+    return 0
+
+
 def cmd_items(args) -> int:
     #: Only call out what the user should be careful with. ROM-derived names
     #: are the common case now, so flagging them would be noise.
@@ -376,6 +417,17 @@ def main(argv=None) -> int:
     pp_.add_argument("--no-backup", action="store_true")
     pp_.add_argument("-n", "--dry-run", action="store_true")
     pp_.set_defaults(func=cmd_party)
+
+    pn = sub.add_parser("name", help="show or change names and the favourite food")
+    pn.add_argument("file")
+    pn.add_argument("character", nargs="?", help="character to rename")
+    pn.add_argument("new_name", nargs="?", help="their new name")
+    pn.add_argument("--player", help="the player's own name")
+    pn.add_argument("--food", help="favourite homemade food")
+    pn.add_argument("--save-slot", type=int, default=0)
+    pn.add_argument("--no-backup", action="store_true")
+    pn.add_argument("-n", "--dry-run", action="store_true")
+    pn.set_defaults(func=cmd_name)
 
     pt = sub.add_parser("items", help="list known item ids")
     pt.add_argument("query", nargs="?")

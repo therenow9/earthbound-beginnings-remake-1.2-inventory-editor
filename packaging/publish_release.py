@@ -76,6 +76,7 @@ though the editing itself works.
 - Change level, EXP and the seven stats
 - Change money
 - Add, remove and reorder party members
+- Rename characters, and set the player name and favourite food
 - Any of your three save slots
 
 ## What it does not do

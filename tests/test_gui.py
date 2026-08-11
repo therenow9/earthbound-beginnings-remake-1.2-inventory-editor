@@ -66,6 +66,12 @@ def app(root, savefile):
     items.load_default()
     a = EditorApp(root, str(savefile))
     yield a
+    # Tk will not reclaim these on its own, and every EditorApp builds a fresh
+    # menu bar on the shared root. Without this the suite dies partway through
+    # with "No more menus can be allocated" once there are enough GUI tests.
+    a.root.config(menu="")
+    for child in a.root.winfo_children():
+        child.destroy()
 
 
 def test_opens_and_shows_the_first_populated_slot(app, savefile):
@@ -439,6 +445,73 @@ def test_reorder_at_the_edge_changes_nothing(app):
     app.apply(lambda b: setattr(b, "party", [0, 1, 2]), "party")
     app.panes[0]._move_in_party(-1)
     assert app.block().party == [0, 1, 2]
+
+
+# --- names in the GUI, including the typed-but-not-committed trap -----------
+
+def test_opening_a_save_fills_in_the_name_boxes(app):
+    """Every field must show its current value on load, not sit empty —
+    an empty box that saves as a rename is worse than no box at all."""
+    blk = app.block()
+    assert app.player_name.get() == blk.player_name
+    assert app.favourite_food.get() == blk.favourite_food
+    for cid, pane in enumerate(app.panes):
+        assert pane.name_var.get() == blk.name(cid), f"{cid} name box empty"
+
+
+def test_typing_names_then_saving_without_leaving_the_field(app, savefile):
+    """The money bug, for every new text field."""
+    app.player_name.set("Jeremy")
+    app.favourite_food.set("Prime Rib")
+    app.panes[0].name_var.set("Zippy")
+    app.write()
+
+    blk = SaveFile.load(savefile).blocks[0]
+    assert blk.player_name == "Jeremy"
+    assert blk.favourite_food == "Prime Rib"
+    assert blk.name(0) == "Zippy"
+
+
+def test_renaming_leaves_the_tab_labels_alone(app):
+    """Tabs name the character *slot*, not the current name. Renaming Ana to
+    something else must not make her tab hard to find."""
+    app.panes[1].name_var.set("Annie")
+    app.panes[1]._commit_name()
+    assert app.block().name(1) == "Annie"
+    for cid in range(L.CHAR_COUNT):
+        assert L.CHARACTERS[cid] in app.tabs.tab(cid, "text")
+    assert "Annie" not in app.tabs.tab(1, "text")
+
+
+def test_an_empty_character_name_is_refused(app):
+    before = app.block().name(0)
+    app.panes[0].name_var.set("   ")
+    app.panes[0]._commit_name()
+    assert app.block().name(0) == before
+    assert app.panes[0].name_var.get() == before
+
+
+def test_an_over_long_name_is_reverted(app, dialogs):
+    before = app.block().name(0)
+    app.panes[0].name_var.set("Bartholomew")
+    app.panes[0]._commit_name()
+    assert app.block().name(0) == before
+    assert app.panes[0].name_var.get() == before
+    assert dialogs, "the refusal was not reported"
+
+
+def test_unencodable_food_is_reverted(app, dialogs):
+    before = app.block().favourite_food
+    app.favourite_food.set("Café")
+    app._commit_food()
+    assert app.block().favourite_food == before
+    assert app.favourite_food.get() == before
+
+
+def test_names_survive_a_slot_switch(app):
+    app.player_name.set("Switched")
+    app._slot_changed()
+    assert app.block().player_name == "Switched"
 
 
 def test_saving_with_no_changes_is_byte_identical(app, savefile):

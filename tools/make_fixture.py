@@ -40,6 +40,14 @@ def build(seed: int = 0, slots: int = 1) -> bytes:
             off = L.NAME_TABLE + L.NAME_STRIDE * cid
             data[off:off + L.NAME_STRIDE] = L.encode_text(nm, L.NAME_STRIDE)
 
+        # Player name (both copies, as the real format keeps it) and the
+        # favourite food, so tests exercise populated text fields.
+        for off in (L.PLAYER_NAME, L.PLAYER_NAME_ALT):
+            data[off:off + L.PLAYER_NAME_SIZE] = \
+                L.encode_text("Tester", L.PLAYER_NAME_SIZE)
+        data[L.FAVOURITE_FOOD:L.FAVOURITE_FOOD + L.FAVOURITE_FOOD_SIZE] = \
+            L.encode_text("Steak", L.FAVOURITE_FOOD_SIZE)
+
         for cid in range(L.CHAR_COUNT):
             rec = L.CHAR_TABLE + L.CHAR_STRIDE * cid
             hp = 200 + 50 * cid

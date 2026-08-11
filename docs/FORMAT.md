@@ -66,6 +66,10 @@ identified. Always write both copies and re-checksum both.
 
 | offset | field | status |
 |---|---|---|
+| `0x00` | player's own name, 12 bytes | VERIFIED |
+| `0x0C` | second copy of the player name | VERIFIED |
+| `0x24` | pet name in EarthBound; **unused by the remake** | VERIFIED |
+| `0x2A` | favourite food, 12 bytes | VERIFIED |
 | `0x3C` | money, u32 LE | VERIFIED |
 | `0x7A` | party roster, 1-based char ids, `00`-terminated | VERIFIED |
 | `0x1D8` | character record table, 4 records, `0x5F` stride | VERIFIED |
@@ -189,6 +193,45 @@ wrapping** — the Equip screen reads 255, not 69 — so a maxed stat is safe.
 
 HP and PP are `u16` and could hold 65535; the editor caps them at 999 because
 the game's readouts are three digits wide.
+
+### Names and the favourite food — VERIFIED
+
+Found by decoding every EB-text run in a save of each game and lining the two
+up. The remake keeps these at **the same block-relative offsets as vanilla
+EarthBound**, which is the strongest single piece of evidence that it inherited
+EB's save structure wholesale rather than reimplementing it:
+
+| offset | vanilla EarthBound | remake |
+|---|---|---|
+| `0x00` | `Alex` | `Jeremy` |
+| `0x0C` | `Alex` again | `Jeremy` again |
+| `0x24` | `King` — the dog | *all zeros* |
+| `0x2A` | `Pizza` — favourite food | `Prime Rib` |
+| `0x30` | `PSI Rockin ` — favourite thing | *tail of the food string* |
+
+Three things the remake changed:
+
+- **No pet name.** `0x24` is empty in every remake save, and the game never
+  asks you to name a dog — confirmed by playing the opening. The field is
+  inherited, not used. Do not expose it; editing it does nothing.
+- **No favourite thing.** Mother 1 has no PSI-naming, so `0x30` is not a
+  separate field.
+- **A wider food field.** The remake writes long food names straight through
+  what EarthBound treated as the boundary — a real save holds the 9-character
+  `Prime Rib` running `0x2A..0x32`, which cannot fit EarthBound's 6-byte food
+  field. Treated here as one 12-byte field, capped short of `MONEY` at `0x3C`
+  so an over-long name can never reach it.
+
+The player name is stored **twice**, at `0x00` and `0x0C`, the same duplication
+the format uses for HP. Both must be written.
+
+The game asks for the four character names and the food at the start, but the
+player's own name only partway through — so a save from earlier legitimately
+has `0x00` empty, and reading must cope with that.
+
+Character renames are confirmed in-game: renaming all four through the editor
+produced a save whose party box and Equip screen read the new names, with
+equipment untouched.
 
 ### Party membership — VERIFIED
 
